@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ChefHat, FolderOpen, ArrowLeft, User } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from './ui/utils';

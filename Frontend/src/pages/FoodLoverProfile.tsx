@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { RecipeCard } from '../components/RecipeCard';
 import { recipes } from '../data/mockData';
 
-export function FoodLoverProfile() {
+export default function FoodLoverProfile() {
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     toast.success('Profile updated successfully!');

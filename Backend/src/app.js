@@ -1,11 +1,15 @@
 const express = require('express');
-const {PORT} = require('./config/config');
-const connectDB = require('./config/database');
-
-// Connect to the database
-connectDB();
+const cookieParser = require('cookie-parser');
+const cors = require("cors");
 
 const app = express();
+app.use(cookieParser());
+
+// ✅ Enable CORS
+app.use(cors({
+  origin: "http://localhost:5173", // your frontend
+  credentials: true
+}));
 
 // Middleware to parse JSON bodies
 app.use(express.json());

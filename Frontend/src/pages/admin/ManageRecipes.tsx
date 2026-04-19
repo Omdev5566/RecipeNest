@@ -6,7 +6,7 @@ import { Card, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { recipes } from '../../data/mockData';
 import { Plus, Search, Edit, Trash2 } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from '../../components/ui/alert-dialog';
 
-export function ManageRecipes() {
+export default function ManageRecipes() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredRecipes = recipes.filter(recipe =>

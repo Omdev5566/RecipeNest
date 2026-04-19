@@ -30,7 +30,7 @@ import {
 } from '../../components/ui/alert-dialog';
 import { toast } from 'sonner';
 
-export function ManageCategories() {
+export default function ManageCategories() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleAddCategory = (e: React.FormEvent) => {
