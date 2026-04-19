@@ -107,9 +107,9 @@ export default function ManageRecipes() {
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <Badge variant="secondary">{recipe.category}</Badge>
-                        <span>Chef: {recipe.chef}</span>
+                        <span>Chef: {recipe.chef_name}</span>
                         <span>•</span>
-                        <span>{recipe.cookTime} min</span>
+                        <span>{recipe.cook_time} min</span>
                         <span>•</span>
                         <span>{recipe.servings} servings</span>
                         <span>•</span>

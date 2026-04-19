@@ -36,7 +36,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              <span>{recipe.cookTime} min</span>
+              <span>{recipe.cook_time} min</span>
             </div>
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
@@ -44,7 +44,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
             </div>
             <div className="flex items-center gap-1">
               <ChefHat className="h-4 w-4" />
-              <span className="line-clamp-1">{recipe.chef}</span>
+              <span className="line-clamp-1">{recipe.chef_name}</span>
             </div>
           </div>
         </CardContent>

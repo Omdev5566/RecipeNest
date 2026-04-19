@@ -4,13 +4,13 @@ export interface Recipe {
   description: string;
   image: string;
   category: string;
-  cookTime: number;
+  cook_time: number;
   servings: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   ingredients: string[];
   instructions: string[];
-  chef: string;
-  createdAt: string;
+  chef_name: string;
+  created_at: string;
 }
 
 export interface Category {
@@ -26,8 +26,7 @@ export const categories: Category[] = [
   { id: '3', name: 'Dinner', description: 'Evening delights', recipeCount: 45 },
   { id: '4', name: 'Desserts', description: 'Sweet treats', recipeCount: 32 },
   { id: '5', name: 'Vegetarian', description: 'Plant-based recipes', recipeCount: 28 },
-  { id: '6', name: 'Quick Meals', description: 'Ready in 30 minutes', recipeCount: 41 },
-];
+]
 
 export const recipes: Recipe[] = [
   {
@@ -36,7 +35,7 @@ export const recipes: Recipe[] = [
     description: 'A timeless Italian classic with fresh mozzarella, basil, and tomato sauce on a crispy crust.',
     image: 'https://images.unsplash.com/photo-1707896543317-da87bde75ff6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYXJnaGVyaXRhJTIwcGl6emElMjBmcmVzaCUyMGJhc2lsfGVufDF8fHx8MTc3MTQ1NTkwOHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Dinner',
-    cookTime: 45,
+    cook_time: 45,
     servings: 4,
     difficulty: 'Medium',
     ingredients: [
@@ -55,8 +54,8 @@ export const recipes: Recipe[] = [
       'Bake for 12-15 minutes until crust is golden.',
       'Top with fresh basil leaves and serve immediately.'
     ],
-    chef: 'Marco Rossi',
-    createdAt: '2026-02-10'
+    chef_name: 'Marco Rossi',
+    created_at: '2026-02-10'
   },
   {
     id: '2',
@@ -64,7 +63,7 @@ export const recipes: Recipe[] = [
     description: 'A healthy and delicious breakfast featuring creamy avocado and perfectly poached eggs.',
     image: 'https://images.unsplash.com/photo-1676471970358-1cff04452e7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdm9jYWRvJTIwdG9hc3QlMjBwb2FjaGVkJTIwZWdnfGVufDF8fHx8MTc3MTQyNTg2NHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Breakfast',
-    cookTime: 15,
+    cook_time: 15,
     servings: 2,
     difficulty: 'Easy',
     ingredients: [
@@ -83,8 +82,8 @@ export const recipes: Recipe[] = [
       'Top with poached eggs and sprinkle with red pepper flakes.',
       'Serve immediately while eggs are warm.'
     ],
-    chef: 'Sarah Johnson',
-    createdAt: '2026-02-12'
+    chef_name: 'Sarah Johnson',
+    created_at: '2026-02-12'
   },
   {
     id: '3',
@@ -92,7 +91,7 @@ export const recipes: Recipe[] = [
     description: 'Aromatic and spicy Thai curry with vegetables and coconut milk.',
     image: 'https://images.unsplash.com/photo-1638517307486-4c2ae5c45764?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0aGFpJTIwZ3JlZW4lMjBjdXJyeSUyMGNvY29udXR8ZW58MXx8fHwxNzcxNDE3OTYyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Dinner',
-    cookTime: 35,
+    cook_time: 35,
     servings: 4,
     difficulty: 'Medium',
     ingredients: [
@@ -113,8 +112,8 @@ export const recipes: Recipe[] = [
       'Add Thai basil leaves just before serving.',
       'Serve with jasmine rice.'
     ],
-    chef: 'Ploy Suwan',
-    createdAt: '2026-02-08'
+    chef_name: 'Ploy Suwan',
+    created_at: '2026-02-08'
   },
   {
     id: '4',
@@ -122,7 +121,7 @@ export const recipes: Recipe[] = [
     description: 'Decadent individual chocolate cakes with a molten center.',
     image: 'https://images.unsplash.com/photo-1762631934519-291bf80c3f2a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaG9jb2xhdGUlMjBsYXZhJTIwY2FrZSUyMG1vbHRlbnxlbnwxfHx8fDE3NzE0NDQyMzV8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Desserts',
-    cookTime: 20,
+    cook_time: 20,
     servings: 4,
     difficulty: 'Hard',
     ingredients: [
@@ -143,8 +142,8 @@ export const recipes: Recipe[] = [
       'Pour into ramekins and bake for 12 minutes.',
       'Let cool for 1 minute, then invert onto plates. Serve immediately.'
     ],
-    chef: 'Pierre Dubois',
-    createdAt: '2026-02-15'
+    chef_name: 'Pierre Dubois',
+    created_at: '2026-02-15'
   },
   {
     id: '5',
@@ -152,7 +151,7 @@ export const recipes: Recipe[] = [
     description: 'Crisp romaine lettuce with classic Caesar dressing and parmesan.',
     image: 'https://images.unsplash.com/photo-1722032617357-7b09276b1a8d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGNhZXNhciUyMHNhbGFkJTIwcGxhdGV8ZW58MXx8fHwxNzcxNDkwMjYxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Lunch',
-    cookTime: 20,
+    cook_time: 20,
     servings: 4,
     difficulty: 'Easy',
     ingredients: [
@@ -174,8 +173,8 @@ export const recipes: Recipe[] = [
       'Toss lettuce with dressing.',
       'Top with croutons and shaved parmesan.'
     ],
-    chef: 'Julia Martinez',
-    createdAt: '2026-02-14'
+    chef_name: 'Julia Martinez',
+    created_at: '2026-02-14'
   },
   {
     id: '6',
@@ -183,7 +182,7 @@ export const recipes: Recipe[] = [
     description: 'Nutritious bowl packed with quinoa, roasted vegetables, and tahini dressing.',
     image: 'https://images.unsplash.com/photo-1679279726937-122c49626802?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxxdWlub2ElMjBidWRkaGElMjBib3dsJTIwdmVnZXRhYmxlc3xlbnwxfHx8fDE3NzE0OTAyNTh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Vegetarian',
-    cookTime: 40,
+    cook_time: 40,
     servings: 2,
     difficulty: 'Easy',
     ingredients: [
@@ -205,8 +204,8 @@ export const recipes: Recipe[] = [
       'Assemble bowl with quinoa, roasted vegetables, kale, and avocado.',
       'Drizzle with tahini dressing and serve.'
     ],
-    chef: 'Emma Green',
-    createdAt: '2026-02-11'
+    chef_name: 'Emma Green',
+    created_at: '2026-02-11'
   },
   {
     id: '7',
@@ -214,7 +213,7 @@ export const recipes: Recipe[] = [
     description: 'Quick and flavorful stir fry perfect for busy weeknights.',
     image: 'https://images.unsplash.com/photo-1761314025701-34795be5f737?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaHJpbXAlMjBzdGlyJTIwZnJ5JTIwYXNpYW58ZW58MXx8fHwxNzcxNDkwMjU4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Quick Meals',
-    cookTime: 15,
+    cook_time: 15,
     servings: 3,
     difficulty: 'Easy',
     ingredients: [
@@ -235,8 +234,8 @@ export const recipes: Recipe[] = [
       'Pour in soy sauce and oyster sauce, toss to combine.',
       'Garnish with green onions and serve over rice.'
     ],
-    chef: 'Kevin Chen',
-    createdAt: '2026-02-16'
+    chef_name: 'Kevin Chen',
+    created_at: '2026-02-16'
   },
   {
     id: '8',
@@ -244,7 +243,7 @@ export const recipes: Recipe[] = [
     description: 'Fluffy pancakes bursting with fresh blueberries.',
     image: 'https://images.unsplash.com/photo-1619592982366-ed3d55927817?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxibHVlYmVycnklMjBwYW5jYWtlcyUyMGJyZWFrZmFzdCUyMHN5cnVwfGVufDF8fHx8MTc3MTQ5MDI1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     category: 'Breakfast',
-    cookTime: 25,
+    cook_time: 25,
     servings: 4,
     difficulty: 'Easy',
     ingredients: [
@@ -265,7 +264,7 @@ export const recipes: Recipe[] = [
       'Cook on a greased griddle until bubbles form, then flip.',
       'Serve with maple syrup and extra blueberries.'
     ],
-    chef: 'Sarah Johnson',
-    createdAt: '2026-02-13'
+    chef_name: 'Sarah Johnson',
+    created_at: '2026-02-13'
   }
 ];

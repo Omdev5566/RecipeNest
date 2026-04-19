@@ -10,9 +10,12 @@ interface UserNavbarProps {
 }
 
 export function UserNavbar({ searchTerm, onSearchChange }: UserNavbarProps) {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  const location = useLocation();
+  const location = useLocation(); // ✅ always call hooks first
+  const { user, loading } = useAuth(); // ✅ always called in same order
+
+  if (loading) {
+    return null; // ✅ safe AFTER hooks
+  }
 
   return (
     <nav className="border-b bg-background sticky top-0 z-50">
@@ -46,6 +49,7 @@ export function UserNavbar({ searchTerm, onSearchChange }: UserNavbarProps) {
                 Discover
               </Link>
             </Button>
+
             <Button
               variant={location.pathname === "/bookmarks" ? "default" : "ghost"}
               size="sm"
@@ -56,6 +60,7 @@ export function UserNavbar({ searchTerm, onSearchChange }: UserNavbarProps) {
                 My Bookmarks
               </Link>
             </Button>
+
             {user ? (
               <Button
                 variant={location.pathname === "/profile" ? "default" : "ghost"}

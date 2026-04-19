@@ -25,7 +25,7 @@ const bcrypt = require("bcrypt");
           userData.name,
           userData.email,
           hashedPassword,
-          userData.role || "student",
+          userData.role,
         ],
       );
 

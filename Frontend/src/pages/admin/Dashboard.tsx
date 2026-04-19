@@ -157,11 +157,11 @@ export default function Dashboard() {
                     />
                     <div>
                       <p className="font-medium">{recipe.title}</p>
-                      <p className="text-sm text-muted-foreground">By {recipe.chef}</p>
+                      <p className="text-sm text-muted-foreground">By {recipe.chef_name}</p>
                     </div>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {recipe.createdAt}
+                    {recipe.created_at}
                   </div>
                 </div>
               ))}

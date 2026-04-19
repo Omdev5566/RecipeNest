@@ -1,16 +1,29 @@
 const recipeservice = require('../services/recipe.service');
 
-const getAllrecipes = (req, res) => {
-  const recipes = recipeservice.getAllrecipes();
-  res.status(200).json(recipes);
+const getAllrecipes = async (req, res) => {
+  try {
+    const recipes = await recipeservice.getAllRecipes();
+    res.json(recipes);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
-const getrecipeById = (req, res) => {
-  const recipe = recipeservice.getrecipeById(req.params.id);
-  if (!recipe) {
-    return res.status(404).json({ error: 'recipe not found' });
+const getrecipeById = async (req, res) => {
+  try {
+    const recipeId = req.params.id;
+
+    const recipe = await recipeservice.getRecipeById(recipeId);
+    console.log(recipe);
+    if (!recipe) {
+      return res.status(404).json({ error: "Recipe not found" });
+    }
+
+    res.status(200).json(recipe);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
-  res.status(200).json(recipe);
 };
 
 const createrecipe = (req, res) => {

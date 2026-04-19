@@ -1,12 +1,79 @@
 const store = require('../data/store');
 const { v4: uuidv4 } = require('uuid');
+const db = require("../config/database")
 
-const getAllrecipes = () => {
-  return store.recipes;
+const getAllRecipes = async (req, res) => {
+    const [rows] = await db.query(`
+      SELECT 
+        r.id,
+        r.title,
+        r.description,
+        r.image_url,
+        r.category,
+        r.difficulty,
+        r.cook_time,
+        r.servings,
+        r.created_at,
+        u.id AS chef_id,
+        u.name AS chef_name
+      FROM recipes r
+      JOIN users u ON r.chef_id = u.id
+      ORDER BY r.created_at DESC
+    `);
+      return rows;
 };
 
-const getrecipeById = (id) => {
-  return store.recipes.find(recipe => recipe.id === id);
+// GET FULL RECIPE DETAILS
+const getRecipeById = async (recipeId) => {
+  // Recipe + Chef
+  const [recipeRows] = await db.query(
+    `
+    SELECT 
+      r.*,
+      u.name AS chef_name
+    FROM recipes r
+    JOIN users u ON r.chef_id = u.id
+    WHERE r.id = ?
+    `,
+    [recipeId]
+  );
+
+  if (recipeRows.length === 0) {
+    return null;
+  }
+
+  const recipe = recipeRows[0];
+
+  // Ingredients
+  const [ingredients] = await db.query(
+    "SELECT ingredient FROM ingredients WHERE recipe_id = ?",
+    [recipeId]
+  );
+
+  // Instructions
+  const [instructions] = await db.query(
+    "SELECT step_number, instruction FROM instructions WHERE recipe_id = ? ORDER BY step_number ASC",
+    [recipeId]
+  );
+
+  // Comments
+  const [comments] = await db.query(
+    `
+    SELECT c.*, u.name 
+    FROM comments c
+    JOIN users u ON c.user_id = u.id
+    WHERE c.recipe_id = ?
+    ORDER BY c.created_at DESC
+    `,
+    [recipeId]
+  );
+
+  return {
+    ...recipe,
+    ingredients: ingredients.map(i => i.ingredient),
+    instructions,
+    comments,
+  };
 };
 
 const createrecipe = (data) => {
@@ -51,8 +118,8 @@ const deleterecipe = (id) => {
 };
 
 module.exports = {
-  getAllrecipes,
-  getrecipeById,
+  getAllRecipes,
+  getRecipeById,
   createrecipe,
   updaterecipe,
   deleterecipe
