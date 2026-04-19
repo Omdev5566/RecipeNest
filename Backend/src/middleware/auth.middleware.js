@@ -1,16 +1,13 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/user.models");
+const db = require("../config/database"); // your mysql pool
 const { JWT_SECRET } = require("../config/config");
 
 const protect = async (req, res, next) => {
   try {
     let token;
 
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")    
-    ) {
-      token = req.headers.authorization.split(" ")[1];
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
     }
 
     if (!token) {
@@ -20,8 +17,15 @@ const protect = async (req, res, next) => {
       });
     }
 
+    // verify token
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
+    // fetch user from DB (same as yours)
+    const [rows] = await db.query(
+      "SELECT id, name, email, role FROM users WHERE id = ?",
+      [decoded.id]
+    );
+
+    const user = rows[0];
 
     if (!user) {
       return res.status(401).json({
@@ -29,41 +33,39 @@ const protect = async (req, res, next) => {
         message: "User not found with this token.",
       });
     }
-
     req.user = user;
     next();
+
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Not authorized. Token is invalid or expired.",
+      message: "Not authorized. Token invalid or expired.",
     });
   }
 };
 
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: "Not authorized. Admin access required.",
-    });
-  }
+  if (req.user?.role === "admin") return next();
+
+  return res.status(403).json({
+    success: false,
+    message: "Admin access required",
+  });
 };
 
-const teacherOnly = (req, res, next) => {
-  if (req.user && (req.user.role === "teacher" || req.user.role === "admin")) {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: "Not authorized. Teacher access required.",
-    });
+const chefOnly = (req, res, next) => {
+  if (req.user?.role === "chef" || req.user?.role === "admin") {
+    return next();
   }
+
+  return res.status(403).json({
+    success: false,
+    message: "Chef access required",
+  });
 };
 
 module.exports = {
   protect,
   adminOnly,
-  teacherOnly,
+  chefOnly,
 };

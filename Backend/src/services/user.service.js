@@ -1,39 +1,65 @@
-const { login } = require("../controllers/user.controller");
-const User = require("../models/user.models");
+const db = require("../config/database"); // mysql2 promise pool
+const generateToken = require("../utils/generateToken");
+const bcrypt = require("bcrypt");
+  const registerUser = async (userData) => {
+    try {
+      // check existing user
+      const [existing] = await db.query("SELECT * FROM users WHERE email = ?", [
+        userData.email,
+      ]);
 
-const registerUser = async (userData) => {
-  try {
-    const existingUser = await User.findOne({ email: userData.email });
-    if (existingUser) {
-      const error = new Error("User already exists with this email");
-      error.statusCode = 400;
-      throw error;
-    }
+      if (existing.length > 0) {
+        const error = new Error("User already exists with this email");
+        error.statusCode = 400;
+        throw error;
+      }
+          // 🔐 hash password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
 
-    const user = new User({
-      name: userData.name,
-      email: userData.email,
-      password: userData.password,
-      role: userData.role || "student",
-    });
+      // insert user
+      const [result] = await db.query(
+        `INSERT INTO users (name, email, password, role)
+        VALUES (?, ?, ?, ?)`,
+        [
+          userData.name,
+          userData.email,
+          hashedPassword,
+          userData.role || "student",
+        ],
+      );
 
-    await user.save();
-    const token = user.generateToken();
+      // fetch inserted user
+      const [rows] = await db.query(
+        "SELECT id, name, email, role FROM users WHERE id = ?",
+        [result.insertId],
+      );
+
+      const user = rows[0];
+
+      const token = generateToken(user); // replace with your JWT function
 
     return {
-      success: true,
-      message: "User registered successfully",
-      data: { user, token },
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
     };
-  } catch (error) {
-    console.error("Error in registerUser:", error.message);
-    throw error;
-  }
-};
+    } catch (error) {
+      console.error("Error in registerUser:", error.message);
+      throw error;
+    }
+  };
 
-const loginUser = async (email, password) => {
-  try {
-    const user = await User.findOne({ email }).select("+password");
+  const loginUser = async (email, password) => {
+    const [rows] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
+
+    const user = rows[0];
 
     if (!user) {
       const error = new Error("Invalid email or password");
@@ -47,53 +73,68 @@ const loginUser = async (email, password) => {
       throw error;
     }
 
-    const isPasswordValid = await user.comparePassword(password);
-    if (!isPasswordValid) {
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
       const error = new Error("Invalid email or password");
       error.statusCode = 401;
       throw error;
     }
 
-    const token = user.generateToken();
-    const userObject = user.toObject();
-    delete userObject.password;
+    const token = generateToken(user);
 
     return {
-      success: true,
-      message: "Login successful",
-      data: { user: userObject, token },
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
     };
-  } catch (error) {
-    console.error("Error in loginUser:", error.message);
-    throw error;
-  }
-};
+  };
 
 const updateUserProfile = async (userId, updateData) => {
   try {
-    const allowedUpdates = ["name", "phone", "address", "avatar"];
-    const filteredData = {};
-    for (const key of allowedUpdates) {
+    const allowedFields = ["name", "phone", "address", "avatar"];
+
+    const fields = [];
+    const values = [];
+
+    for (const key of allowedFields) {
       if (updateData[key] !== undefined) {
-        filteredData[key] = updateData[key];
+        fields.push(`${key} = ?`);
+        values.push(updateData[key]);
       }
     }
 
-    const user = await User.findByIdAndUpdate(userId, filteredData, {
-      new: true,
-      runValidators: true,
-    }).select("-password");
+    if (fields.length === 0) {
+      const error = new Error("No valid fields to update");
+      error.statusCode = 400;
+      throw error;
+    }
 
-    if (!user) {
+    values.push(userId);
+
+    const [result] = await db.query(
+      `UPDATE users SET ${fields.join(", ")} WHERE id = ?`,
+      values,
+    );
+
+    if (result.affectedRows === 0) {
       const error = new Error("User not found");
       error.statusCode = 404;
       throw error;
     }
 
+    const [rows] = await db.query(
+      "SELECT id, name, email, role, phone, address, avatar FROM users WHERE id = ?",
+      [userId],
+    );
+
     return {
       success: true,
       message: "Profile updated successfully",
-      data: { user },
+      data: { user: rows[0] },
     };
   } catch (error) {
     console.error("Error in updateUserProfile:", error.message);
@@ -105,5 +146,4 @@ module.exports = {
   registerUser,
   updateUserProfile,
   loginUser,
-};  
-
+};

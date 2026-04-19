@@ -92,30 +92,59 @@ const register = async (req, res) => {
 
     const { name, email, password, role } = req.body;
     const result = await userService.registerUser({ name, email, password, role });
-    res.status(201).json({ success: true, message: result.message, data: result.data });
-  } catch (error) {
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      secure: false, // true in production (HTTPS)
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Registration successful",
+      data: result.user,
+    });
+    } catch (error) {
     handleError(res, error);
   }
 };
 
 const login = async (req, res) => {
   try {
-    // Simple validation
+    // validation
     const errors = validateLogin(req.body);
     if (errors.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Validation failed",
-        errors: errors,
+        errors,
       });
     }
 
     const { email, password } = req.body;
+
     const result = await userService.loginUser(email, password);
-    res.status(200).json({ success: true, message: result.message, data: result.data });
+
+    // set cookie HERE (not in service)
+    res.cookie("token", result.token, {
+      httpOnly: true,
+      secure: false, // true in production (HTTPS)
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: result.user,
+    });
   } catch (error) {
     handleError(res, error);
   }
+};
+
+const getMe = (req, res) => {
+  res.json(req.user);
 };
 
 const getProfile = async (req, res) => {
@@ -225,6 +254,7 @@ const logout = async (req, res) => {
 module.exports = {
   register,
   login,
+  getMe,
   getProfile,
   updateProfile,
   getAllUsers,

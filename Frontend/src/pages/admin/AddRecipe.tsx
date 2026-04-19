@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { AdminSidebar } from '../../components/AdminSidebar';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -11,7 +11,7 @@ import { categories } from '../../data/mockData';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-export function AddRecipe() {
+export default function AddRecipe() {
   const navigate = useNavigate();
   const [ingredients, setIngredients] = useState<string[]>(['']);
   const [instructions, setInstructions] = useState<string[]>(['']);

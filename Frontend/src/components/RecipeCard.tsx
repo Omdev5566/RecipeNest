@@ -2,7 +2,7 @@ import { Clock, Users, ChefHat } from 'lucide-react';
 import { Recipe } from '../data/mockData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 
 interface RecipeCardProps {
   recipe: Recipe;
