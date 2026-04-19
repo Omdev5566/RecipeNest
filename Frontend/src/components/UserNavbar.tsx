@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Bookmark, Home, LogIn, User } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';

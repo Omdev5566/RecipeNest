@@ -4,7 +4,7 @@ import { ChefHat, FolderOpen, Users, TrendingUp } from 'lucide-react';
 import { recipes, categories } from '../../data/mockData';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
-export function Dashboard() {
+export default function Dashboard() {
   // Analytics data
   const stats = [
     {

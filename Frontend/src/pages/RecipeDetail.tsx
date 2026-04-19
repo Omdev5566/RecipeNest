@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate } from 'react-router-dom';
 import { recipes } from '../data/mockData';
 import { UserNavbar } from '../components/UserNavbar';
 import { Button } from '../components/ui/button';
@@ -49,7 +49,7 @@ const mockComments: Comment[] = [
   },
 ];
 
-export function RecipeDetail() {
+export default function RecipeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const recipe = recipes.find(r => r.id === id);

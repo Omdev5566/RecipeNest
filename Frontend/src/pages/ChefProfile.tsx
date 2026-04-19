@@ -9,7 +9,7 @@ import { Badge } from '../components/ui/badge';
 import { User, Mail, Phone, MapPin, Award, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
-export function ChefProfile() {
+export default function ChefProfile() {
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     toast.success('Profile updated successfully!');

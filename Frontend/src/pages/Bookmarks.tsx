@@ -1,17 +1,14 @@
 import { UserNavbar } from '../components/UserNavbar';
 import { BookmarkX, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 
-export function Bookmarks() {
+export default function Bookmarks() {
   // In a real app, this would fetch bookmarked recipes from state/database
   const bookmarkedRecipes = [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <UserNavbar />
-      
-      <main className="container mx-auto px-4 py-8">
+    <>
         <div className="mb-8">
           <h1 className="text-4xl mb-2">My Bookmarks</h1>
           <p className="text-muted-foreground">
@@ -41,7 +38,6 @@ export function Bookmarks() {
             </Button>
           </div>
         )}
-      </main>
-    </div>
+        </>
   );
 }
