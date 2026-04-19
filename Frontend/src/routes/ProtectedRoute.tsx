@@ -1,6 +1,5 @@
-import { useContext } from "react";
-import { Navigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 type Props = {
   children: React.ReactNode;
@@ -8,21 +7,26 @@ type Props = {
 };
 
 const ProtectedRoute = ({ children, allowedRoles }: Props) => {
-  const auth = useContext(AuthContext);
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
-  if (!auth) return null;
-
-  const { user, loading } = auth;
-
-  if (loading) return <p>Loading...</p>;
-
-  if (!user) return <Navigate to="/login" />;
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" />;
+  // 🔄 still checking auth
+  if (loading) {
+    return <div className="p-4 text-center">Loading...</div>;
   }
 
-  return children;
+  // ❌ not logged in → go login + remember where user was
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // ❌ role not allowed
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+
+  // ✅ allowed
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;
