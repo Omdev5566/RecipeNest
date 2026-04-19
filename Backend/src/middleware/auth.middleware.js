@@ -6,7 +6,6 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
-    // ✅ CHANGE: read from cookies instead of headers
     if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
     }
@@ -20,7 +19,6 @@ const protect = async (req, res, next) => {
 
     // verify token
     const decoded = jwt.verify(token, JWT_SECRET);
-
     // fetch user from DB (same as yours)
     const [rows] = await db.query(
       "SELECT id, name, email, role FROM users WHERE id = ?",
@@ -35,7 +33,6 @@ const protect = async (req, res, next) => {
         message: "User not found with this token.",
       });
     }
-
     req.user = user;
     next();
 

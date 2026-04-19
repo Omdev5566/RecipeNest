@@ -7,8 +7,8 @@ export const loginUser = (data) => API.post("/users/login", data);
 export const registerUser = (data) => API.post("/users/register", data);
 
 // get current user
-export const getMe = () => API.get("/auth/me");
+export const getMe = () => API.get("/users/me");
 
 export const logoutUser = () => {
-  return API.post("/auth/logout");
+  return API.post("/users/logout");
 };

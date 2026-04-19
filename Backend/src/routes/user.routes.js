@@ -39,7 +39,7 @@ router.post("/register", userController.register);
 router.post("/login", userController.login);
 
 //Get the user id to verify
-router.post("/me", protect, userController.getMe);
+router.get("/me", protect, userController.getMe);
 
 /**
  * POST /api/users/create

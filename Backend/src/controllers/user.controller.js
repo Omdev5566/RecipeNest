@@ -143,9 +143,9 @@ const login = async (req, res) => {
   }
 };
 
-const getMe = async (req, res) => {
+const getMe = (req, res) => {
   res.json(req.user);
-}
+};
 
 const getProfile = async (req, res) => {
   try {
