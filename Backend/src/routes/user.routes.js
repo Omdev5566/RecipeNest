@@ -25,23 +25,6 @@ const { uploadAvatar } = require("../config/multer.config");
 // ============================================
 
 /**
- * POST /api/users/register
- * Register a new user (student by default)
- * Body: { name, email, password, role }
- */
-router.post("/register", userController.register);
-
-/**
- * POST /api/users/login
- * Login existing user
- * Body: { email, password }
- */
-router.post("/login", userController.login);
-
-//Get the user id to verify
-router.get("/me", protect, userController.getMe);
-
-/**
  * POST /api/users/create
  * Create a new user (alternative endpoint)
  * Body: { name, email, password, role }
@@ -53,17 +36,28 @@ router.post("/create", userController.createUser);
 // ============================================
 
 /**
- * POST /api/users/logout
- * Logout user (client-side token removal)
- * Note: For JWT, actual logout is done on client by removing token
- */
-router.post("/logout", protect, userController.logout);
-
-/**
  * GET /api/users/profile
  * Get current user's profile
  */
 router.get("/profile", protect, userController.getProfile);
+
+/**
+ * GET /api/users/public/:id
+ * Get another user's public profile (logged-in users)
+ */
+router.get("/public/:id", protect, userController.getPublicUserProfile);
+
+/**
+ * POST /api/users/:id/follow
+ * Follow a user
+ */
+router.post("/:id/follow", protect, userController.followUser);
+
+/**
+ * DELETE /api/users/:id/follow
+ * Unfollow a user
+ */
+router.delete("/:id/follow", protect, userController.unfollowUser);
 
 /**
  * PUT /api/users/profile
@@ -96,12 +90,6 @@ router.put("/profile", protect, userController.updateProfile);
  */
 // router.delete("/avatar", protect, userController.deleteAvatar);
 
-/**
- * POST /api/users/change-password
- * Change user's password
- * Body: { currentPassword, newPassword }
- */
-router.post("/change-password", protect, userController.changePassword);
 
 // ============================================
 // ADMIN ROUTES (Admin authentication required)
@@ -120,12 +108,6 @@ router.get("/", protect, adminOnly, userController.getAllUsers);
  */
 router.get("/:id", protect, adminOnly, userController.getUserById);
 
-/**
- * DELETE /api/users/:id
- * Deactivate (soft delete) a user
- * Note: User is not actually deleted, just marked as inactive
- */
-router.delete("/:id", protect, adminOnly, userController.deactivateUser);
 
 // Export router for use in app.js
 module.exports = router;

@@ -26,6 +26,8 @@ app.use(express.urlencoded({ extended: true }));
 const userRoutes = require('./routes/user.routes');
 const recipeRoutes = require('./routes/recipe.routes');
 const commentRoutes = require('./routes/comment.routes');
+const authRoutes = require('./routes/auth.routes')
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/comments', commentRoutes);

@@ -1,11 +1,53 @@
-import { UserNavbar } from '../components/UserNavbar';
-import { BookmarkX, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { BookmarkX, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
+import { RecipeCard } from '../components/RecipeCard';
+import { getProfile } from '../services/userService';
+
+type BookmarkedRecipe = {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  category?: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  cook_time: number;
+  servings: number;
+  chef_name: string;
+};
 
 export default function Bookmarks() {
-  // In a real app, this would fetch bookmarked recipes from state/database
-  const bookmarkedRecipes = [];
+  const [bookmarkedRecipes, setBookmarkedRecipes] = useState<BookmarkedRecipe[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadBookmarks = async () => {
+      try {
+        setLoading(true);
+        const res = await getProfile();
+        const user = res.data?.data?.user;
+        setBookmarkedRecipes(user?.bookmarked_recipes || []);
+      } catch (error) {
+        setBookmarkedRecipes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBookmarks();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Loading bookmarks...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -18,7 +60,9 @@ export default function Bookmarks() {
 
         {bookmarkedRecipes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {/* Recipe cards would go here */}
+            {bookmarkedRecipes.map((recipe) => (
+              <RecipeCard key={recipe.id} recipe={recipe as never} />
+            ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto">

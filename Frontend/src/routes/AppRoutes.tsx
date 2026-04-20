@@ -4,11 +4,12 @@ import Login from "../pages/Login";
 import Register from "../pages/Signup";
 import AdminDashboard from "../pages/admin/Dashboard";
 import ChefDashboard from "../pages/ChefProfile";
-import Profile from "../pages/FoodLoverProfile";
+import Profile from "../pages/profile/FoodLoverProfile";
 import ProtectedRoute from "./ProtectedRoute";
 import MainLayout from "../layouts/MainLayout";
 import RecipeDetail from "../pages/RecipeDetail";
 import Bookmarks from "../pages/Bookmarks";
+import AllUsersProfile from "../pages/profile/AllUsersProfile";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
@@ -37,6 +38,14 @@ export const router = createBrowserRouter([
       {
         path: "/bookmarks",
         element: <Bookmarks />
+      },
+      {
+        path: "/users/:id",
+        element: (
+          <ProtectedRoute>
+            <AllUsersProfile />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
