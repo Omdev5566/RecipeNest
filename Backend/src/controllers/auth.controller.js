@@ -110,6 +110,7 @@ const login = async (req, res) => {
     }
 
     const { email, password } = req.body;
+    console.log("email and pass", email, password);
 
     const result = await authService.loginUser(email, password);
 
@@ -157,7 +158,16 @@ const changePassword = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-  res.status(200).json({ success: true, message: "Logged out successfully" });
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true, // true in production (HTTPS)
+    sameSite: "Strict",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
 };
 
 

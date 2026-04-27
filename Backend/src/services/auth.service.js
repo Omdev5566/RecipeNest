@@ -88,6 +88,8 @@ const bcrypt = require("bcrypt");
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
+        profile_image: user.profile_image,
       },
     };
   };

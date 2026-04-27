@@ -7,5 +7,5 @@ router.get("/recipe/:recipeId", commentController.getCommentsByRecipe);
 router.post("/", protect, commentController.addComment);
 router.post("/:id/like", protect, commentController.toggleCommentLike);
 router.delete("/:id", protect, commentController.deleteComment);
-
+    
 module.exports = router;

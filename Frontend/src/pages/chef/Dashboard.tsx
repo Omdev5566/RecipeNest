@@ -1,70 +1,113 @@
-import { AdminSidebar } from '../../components/AdminSidebar';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { ChefHat, FolderOpen, Users, TrendingUp } from 'lucide-react';
-import { recipes, categories } from '../../data/mockData';
+import { ChefHat, FolderOpen, Users, TrendingUp, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { getAllRecipesForAnalytics, getChefProfile } from '../../services/chefServices';
 
 export default function Dashboard() {
-  // Analytics data
-  const stats = [
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [allRecipes, setAllRecipes] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [profileData, recipesData] = await Promise.all([
+          getChefProfile(),
+          getAllRecipesForAnalytics(),
+        ]);
+
+        setProfile(profileData);
+        setAllRecipes(recipesData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const myRecipes = useMemo(() => profile?.created_recipes || [], [profile]);
+
+  const categoryData = useMemo(() => {
+    const map = new Map();
+
+    myRecipes.forEach((recipe: any) => {
+      if (!recipe.category) return;
+      map.set(recipe.category, (map.get(recipe.category) || 0) + 1);
+    });
+
+    return Array.from(map.entries()).map(([name, recipes]) => ({ name, recipes }));
+  }, [myRecipes]);
+
+  const weeklyData = useMemo(() => {
+    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - 6);
+
+    const counts = labels.map((day) => ({ day, views: 0 }));
+
+    myRecipes.forEach((recipe: any) => {
+      const createdAt = new Date(recipe.created_at);
+      if (Number.isNaN(createdAt.getTime()) || createdAt < start || createdAt > today) {
+        return;
+      }
+
+      const dayIndex = createdAt.getDay();
+      const normalized = dayIndex === 0 ? 6 : dayIndex - 1;
+      counts[normalized].views += 1;
+    });
+
+    return counts;
+  }, [myRecipes]);
+
+  const stats = useMemo(() => [
     {
-      title: 'Total Recipes',
-      value: recipes.length,
+      title: 'My Recipes',
+      value: myRecipes.length,
       icon: ChefHat,
-      change: '+12% from last month',
-      trend: 'up'
+      change: 'Published recipes',
     },
     {
       title: 'Categories',
-      value: categories.length,
+      value: categoryData.length,
       icon: FolderOpen,
-      change: '+2 new categories',
-      trend: 'up'
+      change: 'Used in your recipes',
     },
     {
-      title: 'Active Users',
-      value: '2,847',
+      title: 'Followers',
+      value: profile?.stats?.followers || 0,
       icon: Users,
-      change: '+18% from last week',
-      trend: 'up'
+      change: 'People following you',
     },
     {
-      title: 'Recipe Views',
-      value: '45,231',
+      title: 'Total Platform Recipes',
+      value: allRecipes.length,
       icon: TrendingUp,
-      change: '+24% this week',
-      trend: 'up'
-    }
-  ];
+      change: 'Across all chefs',
+    },
+  ], [myRecipes.length, categoryData.length, profile?.stats?.followers, allRecipes.length]);
 
-  // Category distribution data
-  const categoryData = categories.map(cat => ({
-    name: cat.name,
-    recipes: cat.recipeCount
-  }));
-
-  // Weekly views data
-  const weeklyData = [
-    { day: 'Mon', views: 4200 },
-    { day: 'Tue', views: 5100 },
-    { day: 'Wed', views: 4800 },
-    { day: 'Thu', views: 6200 },
-    { day: 'Fri', views: 7100 },
-    { day: 'Sat', views: 8500 },
-    { day: 'Sun', views: 9200 }
-  ];
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Loading dashboard...
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <AdminSidebar />
-      
-      <main className="flex-1 p-8">
+    <div className="p-8">
         <div className="mb-8">
           <h1 className="text-4xl mb-2">Dashboard Overview</h1>
-          <p className="text-muted-foreground">Welcome to ChefPortal - Your comprehensive recipe management hub for culinary professionals</p>
+          <p className="text-muted-foreground">Live insights from your chef account and recipes</p>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat) => {
             const Icon = stat.icon;
@@ -85,23 +128,22 @@ export default function Dashboard() {
           })}
         </div>
 
-        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recipes by Category</CardTitle>
+              <CardTitle>My Recipes by Category</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={categoryData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip 
-                    contentStyle={{ 
+                  <YAxis className="text-xs" allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
                     }}
                   />
                   <Bar dataKey="recipes" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
@@ -112,25 +154,25 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Weekly Recipe Views</CardTitle>
+              <CardTitle>Recipes Added This Week</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={weeklyData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="day" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip 
-                    contentStyle={{ 
+                  <YAxis className="text-xs" allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="views" 
-                    stroke="hsl(var(--primary))" 
+                  <Line
+                    type="monotone"
+                    dataKey="views"
+                    stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     dot={{ fill: 'hsl(var(--primary))' }}
                   />
@@ -140,18 +182,17 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Recent Activity */}
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Recent Recipes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recipes.slice(0, 5).map(recipe => (
+              {myRecipes.slice(0, 5).map((recipe: any) => (
                 <div key={recipe.id} className="flex items-center justify-between py-2 border-b last:border-0">
                   <div className="flex items-center gap-4">
-                    <img 
-                      src={recipe.image} 
+                    <img
+                      src={recipe.image || recipe.image_url}
                       alt={recipe.title}
                       className="w-12 h-12 rounded object-cover"
                     />
@@ -161,14 +202,17 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {recipe.created_at}
+                    {new Date(recipe.created_at).toLocaleDateString()}
                   </div>
                 </div>
               ))}
+
+              {myRecipes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No recipes created yet.</p>
+              ) : null}
             </div>
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

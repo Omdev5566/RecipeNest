@@ -6,20 +6,20 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
+} from "../components/ui/card";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "../../components/ui/avatar";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
+} from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../components/ui/tabs";
+} from "../components/ui/tabs";
 import {
   User,
   Mail,
@@ -35,14 +35,14 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ProfileUser } from "../../data/UserProfileModel";
+import { ProfileUser } from "../data/UserProfileModel";
 import {
   followUser,
   getPublicUserProfile,
   unfollowUser,
-} from "../../services/userService";
-import { RecipeCard } from "../../components/RecipeCard";
-import { ProfileListDialog } from "./ui/ProfileListDialog";
+} from "../services/userService";
+import { RecipeCard } from "../components/RecipeCard";
+import { ProfileListDialog } from "./userprofile/ui/profileListDialog";
 
 const formatJoinDate = (value?: string | null) => {
   if (!value) return "Just now";

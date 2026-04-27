@@ -95,6 +95,17 @@ router.put("/profile", protect, userController.updateProfile);
 // ADMIN ROUTES (Admin authentication required)
 // ============================================
 
+router.get("/admin/dashboard", protect, adminOnly, userController.getAdminDashboard);
+router.get("/admin/users", protect, adminOnly, userController.getAdminUsers);
+router.patch("/admin/users/:id/role", protect, adminOnly, userController.updateAdminUserRole);
+router.delete("/admin/users/:id", protect, adminOnly, userController.deleteAdminUser);
+
+router.get("/admin/recipes", protect, adminOnly, userController.getAdminRecipes);
+router.delete("/admin/recipes/:id", protect, adminOnly, userController.deleteAdminRecipe);
+
+router.get("/admin/comments", protect, adminOnly, userController.getAdminComments);
+router.delete("/admin/comments/:id", protect, adminOnly, userController.deleteAdminComment);
+
 /**
  * GET /api/users
  * Get all users with pagination
@@ -107,6 +118,8 @@ router.get("/", protect, adminOnly, userController.getAllUsers);
  * Get specific user by ID
  */
 router.get("/:id", protect, adminOnly, userController.getUserById);
+
+router.get("/bookmarks/:id", protect, userController.getBookmarks)
 
 
 // Export router for use in app.js

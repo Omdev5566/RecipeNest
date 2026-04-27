@@ -18,3 +18,5 @@ export const followUser = (id) => API.post(`/users/${id}/follow`);
 export const unfollowUser = (id) => API.delete(`/users/${id}/follow`);
 
 export const createUser = (data) => API.post("/users/create", data);
+
+export const getBookmarks = (id) => API.get(`users/bookmarks/${id}`);

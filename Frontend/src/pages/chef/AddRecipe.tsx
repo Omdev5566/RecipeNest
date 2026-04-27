@@ -1,20 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AdminSidebar } from '../../components/AdminSidebar';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { categories } from '../../data/mockData';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { createChefRecipe, getAllRecipesForAnalytics } from '../../services/chefServices';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AddRecipe() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [difficulty, setDifficulty] = useState('');
+  const [cookTime, setCookTime] = useState('');
+  const [servings, setServings] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [ingredients, setIngredients] = useState<string[]>(['']);
   const [instructions, setInstructions] = useState<string[]>(['']);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const recipes = await getAllRecipesForAnalytics();
+        const uniqueCategories = Array.from(
+          new Set(recipes.map((recipe: any) => recipe.category).filter(Boolean)),
+        );
+        setCategories(uniqueCategories);
+      } catch (error) {
+        setCategories([]);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  const validIngredients = useMemo(
+    () => ingredients.map((item) => item.trim()).filter(Boolean),
+    [ingredients],
+  );
+
+  const validInstructions = useMemo(
+    () => instructions.map((item) => item.trim()).filter(Boolean),
+    [instructions],
+  );
 
   const handleAddIngredient = () => {
     setIngredients([...ingredients, '']);
@@ -25,9 +63,9 @@ export default function AddRecipe() {
   };
 
   const handleIngredientChange = (index: number, value: string) => {
-    const newIngredients = [...ingredients];
-    newIngredients[index] = value;
-    setIngredients(newIngredients);
+    const next = [...ingredients];
+    next[index] = value;
+    setIngredients(next);
   };
 
   const handleAddInstruction = () => {
@@ -39,23 +77,57 @@ export default function AddRecipe() {
   };
 
   const handleInstructionChange = (index: number, value: string) => {
-    const newInstructions = [...instructions];
-    newInstructions[index] = value;
-    setInstructions(newInstructions);
+    const next = [...instructions];
+    next[index] = value;
+    setInstructions(next);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Recipe added successfully!');
-    navigate('/admin/recipes');
+
+    if (!user?.id) {
+      toast.error('You must be logged in as chef to add recipes');
+      return;
+    }
+
+    if (!category || !difficulty) {
+      toast.error('Please select category and difficulty');
+      return;
+    }
+
+    if (validIngredients.length === 0 || validInstructions.length === 0) {
+      toast.error('Please add at least one ingredient and one instruction');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await createChefRecipe({
+        title,
+        description,
+        image_url: imageUrl,
+        category,
+        difficulty,
+        cook_time: Number(cookTime),
+        servings: Number(servings),
+        ingredients: validIngredients,
+        instructions: validInstructions,
+        chef_id: user.id,
+      });
+
+      toast.success('Recipe added successfully!');
+      navigate('/manage-recipes');
+    } catch (error: any) {
+      const message = error?.response?.data?.error || 'Failed to add recipe';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <AdminSidebar />
-      
-      <main className="flex-1 p-8">
-        <Button variant="ghost" onClick={() => navigate('/admin/recipes')} className="mb-6">
+    <div className="p-8">
+        <Button variant="ghost" onClick={() => navigate('/manage-recipes')} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Recipes
         </Button>
@@ -63,7 +135,6 @@ export default function AddRecipe() {
         <h1 className="text-4xl mb-8">Add New Recipe</h1>
 
         <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
-          {/* Basic Info */}
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -71,13 +142,15 @@ export default function AddRecipe() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="title">Recipe Title</Label>
-                <Input id="title" placeholder="Enter recipe title" required />
+                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter recipe title" required />
               </div>
-              
+
               <div>
                 <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   placeholder="Brief description of the recipe"
                   rows={3}
                   required
@@ -87,14 +160,14 @@ export default function AddRecipe() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="category">Category</Label>
-                  <Select required>
+                  <Select value={category} onValueChange={setCategory} required>
                     <SelectTrigger id="category">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.name}>
-                          {cat.name}
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -103,7 +176,7 @@ export default function AddRecipe() {
 
                 <div>
                   <Label htmlFor="difficulty">Difficulty</Label>
-                  <Select required>
+                  <Select value={difficulty} onValueChange={setDifficulty} required>
                     <SelectTrigger id="difficulty">
                       <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
@@ -116,31 +189,48 @@ export default function AddRecipe() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="cookTime">Cook Time (min)</Label>
-                  <Input id="cookTime" type="number" placeholder="30" required />
-                </div>
-                
-                <div>
-                  <Label htmlFor="servings">Servings</Label>
-                  <Input id="servings" type="number" placeholder="4" required />
+                  <Input
+                    id="cookTime"
+                    type="number"
+                    value={cookTime}
+                    onChange={(e) => setCookTime(e.target.value)}
+                    placeholder="30"
+                    min={1}
+                    required
+                  />
                 </div>
 
                 <div>
-                  <Label htmlFor="chef">Chef Name</Label>
-                  <Input id="chef" placeholder="Chef name" required />
+                  <Label htmlFor="servings">Servings</Label>
+                  <Input
+                    id="servings"
+                    type="number"
+                    value={servings}
+                    onChange={(e) => setServings(e.target.value)}
+                    placeholder="4"
+                    min={1}
+                    required
+                  />
                 </div>
               </div>
 
               <div>
                 <Label htmlFor="image">Image URL</Label>
-                <Input id="image" type="url" placeholder="https://..." required />
+                <Input
+                  id="image"
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://..."
+                  required
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* Ingredients */}
           <Card>
             <CardHeader>
               <CardTitle>Ingredients</CardTitle>
@@ -173,7 +263,6 @@ export default function AddRecipe() {
             </CardContent>
           </Card>
 
-          {/* Instructions */}
           <Card>
             <CardHeader>
               <CardTitle>Instructions</CardTitle>
@@ -211,17 +300,22 @@ export default function AddRecipe() {
             </CardContent>
           </Card>
 
-          {/* Submit */}
           <div className="flex gap-4">
-            <Button type="submit" size="lg">
-              Add Recipe
+            <Button type="submit" size="lg" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Recipe'
+              )}
             </Button>
-            <Button type="button" variant="outline" size="lg" onClick={() => navigate('/admin/recipes')}>
+            <Button type="button" variant="outline" size="lg" onClick={() => navigate('/manage-recipes')}>
               Cancel
             </Button>
           </div>
         </form>
-      </main>
     </div>
   );
 }

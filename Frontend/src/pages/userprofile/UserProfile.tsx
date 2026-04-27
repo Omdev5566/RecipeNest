@@ -11,7 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "../../components/ui/avatar";
 import { Badge } from "../../components/ui/badge";
 import {
   Tabs,
@@ -37,8 +41,7 @@ import {
 import { toast } from "sonner";
 import { RecipeCard } from "../../components/RecipeCard";
 import { getProfile, updateProfile } from "../../services/userService";
-import type { Recipe } from "../../data/mockData";
-import { ProfileListDialog } from "./ui/ProfileListDialog";
+import { ProfileListDialog } from "./ui/profileListDialog";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -195,10 +198,18 @@ export default function FoodLoverProfile() {
                   </AvatarFallback>
                 </Avatar>
                 <h3 className="text-xl font-semibold mb-1">{user.name}</h3>
-                <Badge variant="secondary" className="mb-4">
-                  <User className="h-3 w-3 mr-1" />
-                  Food Lover
-                </Badge>
+                {user.role == "user" ? (
+                  <Badge variant="secondary" className="mb-4">
+                    <User className="h-3 w-3 mr-1" />
+                    Food Lover
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="mb-4">
+                    <User className="h-3 w-3 mr-1" />
+                    {user.role}
+                  </Badge>
+                )}
+
                 <Button variant="outline" size="sm" disabled>
                   Change Photo
                 </Button>
@@ -219,7 +230,9 @@ export default function FoodLoverProfile() {
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Award className="h-4 w-4 text-muted-foreground" />
-                  <span>{user.preferences?.skill_level || "Beginner"} Cook</span>
+                  <span>
+                    {user.preferences?.skill_level || "Beginner"} Cook
+                  </span>
                 </div>
               </div>
 
@@ -254,7 +267,9 @@ export default function FoodLoverProfile() {
                   className="text-center rounded-lg transition-colors hover:bg-muted/50 py-2"
                 >
                   <Users className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-2xl font-bold">{user.stats?.followers || 0}</p>
+                  <p className="text-2xl font-bold">
+                    {user.stats?.followers || 0}
+                  </p>
                   <p className="text-xs text-muted-foreground">Followers</p>
                 </button>
                 <button
@@ -263,13 +278,17 @@ export default function FoodLoverProfile() {
                   className="text-center rounded-lg transition-colors hover:bg-muted/50 py-2"
                 >
                   <ChefHat className="h-5 w-5 mx-auto mb-1 text-primary" />
-                  <p className="text-2xl font-bold">{user.stats?.following || 0}</p>
+                  <p className="text-2xl font-bold">
+                    {user.stats?.following || 0}
+                  </p>
                   <p className="text-xs text-muted-foreground">Following</p>
                 </button>
               </div>
 
               <div className="pt-4 border-t">
-                <p className="text-sm font-semibold mb-2">Favorite Categories</p>
+                <p className="text-sm font-semibold mb-2">
+                  Favorite Categories
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {favoriteCategories.length > 0 ? (
                     favoriteCategories.map((category) => (
@@ -359,7 +378,11 @@ export default function FoodLoverProfile() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                         {user.preferences?.dietary_preferences?.length ? (
                           user.preferences.dietary_preferences.map((pref) => (
-                            <Badge key={pref} variant="outline" className="justify-center py-1">
+                            <Badge
+                              key={pref}
+                              variant="outline"
+                              className="justify-center py-1"
+                            >
                               {pref}
                             </Badge>
                           ))
@@ -406,7 +429,8 @@ export default function FoodLoverProfile() {
                 <CardHeader>
                   <CardTitle>Saved Recipes</CardTitle>
                   <CardDescription>
-                    Your collection of bookmarked recipes ({user.stats?.bookmarks || 0} total)
+                    Your collection of bookmarked recipes (
+                    {user.stats?.bookmarks || 0} total)
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -430,29 +454,47 @@ export default function FoodLoverProfile() {
                 <CardHeader>
                   <CardTitle>Recent Activity</CardTitle>
                   <CardDescription>
-                    Your recent reviews, bookmarks, cooked recipes, and followers
+                    Your recent reviews, bookmarks, cooked recipes, and
+                    followers
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {recentActivity.length > 0 ? (
                     <div className="space-y-4">
                       {recentActivity.map((item) => (
-                        <div key={`${item.type}-${item.id}`} className="border-l-2 border-primary pl-4 py-2">
+                        <div
+                          key={`${item.type}-${item.id}`}
+                          className="border-l-2 border-primary pl-4 py-2"
+                        >
                           <div className="flex items-center gap-2 mb-1">
-                            {item.type === "comment" && <MessageSquare className="h-4 w-4 text-primary" />}
-                            {item.type === "bookmark" && <Bookmark className="h-4 w-4 text-primary" />}
-                            {item.type === "cooked" && <Heart className="h-4 w-4 text-primary" />}
-                            {item.type === "follower" && <User className="h-4 w-4 text-primary" />}
-                            <span className="font-semibold text-sm">{item.title}</span>
+                            {item.type === "comment" && (
+                              <MessageSquare className="h-4 w-4 text-primary" />
+                            )}
+                            {item.type === "bookmark" && (
+                              <Bookmark className="h-4 w-4 text-primary" />
+                            )}
+                            {item.type === "cooked" && (
+                              <Heart className="h-4 w-4 text-primary" />
+                            )}
+                            {item.type === "follower" && (
+                              <User className="h-4 w-4 text-primary" />
+                            )}
+                            <span className="font-semibold text-sm">
+                              {item.title}
+                            </span>
                             <span className="text-xs text-muted-foreground ml-auto">
                               {new Date(item.created_at).toLocaleDateString()}
                             </span>
                           </div>
                           {item.text ? (
-                            <p className="text-sm text-muted-foreground">“{item.text}”</p>
+                            <p className="text-sm text-muted-foreground">
+                              “{item.text}”
+                            </p>
                           ) : null}
                           {typeof item.rating === "number" ? (
-                            <p className="text-xs text-muted-foreground mt-1">Rating: {item.rating}/5</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Rating: {item.rating}/5
+                            </p>
                           ) : null}
                         </div>
                       ))}

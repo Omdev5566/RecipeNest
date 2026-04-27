@@ -267,9 +267,7 @@ const getAllUsers = async (options = {}) => {
     const limit = Math.max(parseInt(options.limit, 10) || 10, 1);
     const offset = (page - 1) * limit;
 
-    const [countRows] = await db.query(
-      "SELECT COUNT(*) AS total FROM users",
-    );
+    const [countRows] = await db.query("SELECT COUNT(*) AS total FROM users");
 
     const total = countRows[0]?.total || 0;
     const totalPages = Math.ceil(total / limit) || 1;
@@ -356,7 +354,9 @@ const followUser = async (followerId, followingId) => {
       throw error;
     }
 
-    const [userRows] = await db.query("SELECT id FROM users WHERE id = ?", [followingId]);
+    const [userRows] = await db.query("SELECT id FROM users WHERE id = ?", [
+      followingId,
+    ]);
     if (userRows.length === 0) {
       const error = new Error("User not found");
       error.statusCode = 404;
@@ -402,10 +402,353 @@ const unfollowUser = async (followerId, followingId) => {
   }
 };
 
+const getBookmarks = async (userId, viewerId = userId) => {
+  try {
+    const [bookmarkedRecipeRows] = await db.query(
+      `SELECT r.id, r.title, r.description, r.image_url, r.category, r.difficulty,
+              r.cook_time, r.servings, r.created_at, u.name AS chef_name, b.id AS bookmark_id
+       FROM bookmarks b
+       JOIN recipes r ON r.id = b.recipe_id
+       LEFT JOIN users u ON u.id = r.chef_id
+       WHERE b.user_id = ?
+       ORDER BY b.id DESC`,
+      [userId],
+    );
+    return{
+      success: true,
+      message: "Bookmarks get Successfully",
+      data: bookmarkedRecipeRows
+    }
+  } catch (err) {
+    console.error("Error getting bookmmarks:", error.message);
+    throw error;
+  }
+};
+
+const getAdminDashboard = async () => {
+  const [userCountRows] = await db.query("SELECT COUNT(*) AS total FROM users");
+  const [chefCountRows] = await db.query(
+    "SELECT COUNT(*) AS total FROM users WHERE role = 'chef'"
+  );
+  const [adminCountRows] = await db.query(
+    "SELECT COUNT(*) AS total FROM users WHERE role = 'admin'"
+  );
+  const [recipeCountRows] = await db.query("SELECT COUNT(*) AS total FROM recipes");
+  const [commentCountRows] = await db.query("SELECT COUNT(*) AS total FROM comments");
+
+  const [recentUsers] = await db.query(
+    `SELECT id, name, email, role, created_at
+     FROM users
+     ORDER BY created_at DESC
+     LIMIT 5`
+  );
+
+  const [recentRecipes] = await db.query(
+    `SELECT r.id, r.title, r.category, r.created_at, u.name AS chef_name
+     FROM recipes r
+     LEFT JOIN users u ON u.id = r.chef_id
+     ORDER BY r.created_at DESC
+     LIMIT 5`
+  );
+
+  const [topCategories] = await db.query(
+    `SELECT category, COUNT(*) AS total
+     FROM recipes
+     GROUP BY category
+     ORDER BY total DESC
+     LIMIT 6`
+  );
+
+  return {
+    stats: {
+      total_users: userCountRows[0]?.total || 0,
+      total_chefs: chefCountRows[0]?.total || 0,
+      total_admins: adminCountRows[0]?.total || 0,
+      total_recipes: recipeCountRows[0]?.total || 0,
+      total_comments: commentCountRows[0]?.total || 0,
+    },
+    recent_users: recentUsers,
+    recent_recipes: recentRecipes,
+    top_categories: topCategories,
+  };
+};
+
+const getAdminUsers = async (options = {}) => {
+  const page = Math.max(parseInt(options.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(options.limit, 10) || 10, 1), 50);
+  const offset = (page - 1) * limit;
+
+  const where = [];
+  const params = [];
+
+  if (options.search) {
+    where.push("(name LIKE ? OR email LIKE ?)");
+    params.push(`%${options.search}%`, `%${options.search}%`);
+  }
+
+  if (options.role && ["user", "chef", "admin"].includes(options.role)) {
+    where.push("role = ?");
+    params.push(options.role);
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const [countRows] = await db.query(
+    `SELECT COUNT(*) AS total FROM users ${whereSql}`,
+    params
+  );
+
+  const [rows] = await db.query(
+    `SELECT id, name, email, role, phone, location, bio, profile_image, created_at
+     FROM users
+     ${whereSql}
+     ORDER BY created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  );
+
+  const total = countRows[0]?.total || 0;
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return {
+    users: rows,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+};
+
+const updateAdminUserRole = async (userId, role, actorId) => {
+  const allowedRoles = ["user", "chef", "admin"];
+  if (!allowedRoles.includes(role)) {
+    const error = new Error("Invalid role");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const [rows] = await db.query("SELECT id FROM users WHERE id = ?", [userId]);
+  if (!rows.length) {
+    const error = new Error("User not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (Number(actorId) === Number(userId) && role !== "admin") {
+    const error = new Error("You cannot remove your own admin role");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await db.query("UPDATE users SET role = ? WHERE id = ?", [role, userId]);
+  const [updatedRows] = await db.query(
+    "SELECT id, name, email, role, created_at FROM users WHERE id = ?",
+    [userId]
+  );
+
+  return updatedRows[0];
+};
+
+const deleteAdminUser = async (userId, actorId) => {
+  if (Number(userId) === Number(actorId)) {
+    const error = new Error("You cannot delete your own account");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [userRows] = await connection.query("SELECT id FROM users WHERE id = ?", [userId]);
+    if (!userRows.length) {
+      const error = new Error("User not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const [recipeRows] = await connection.query("SELECT id FROM recipes WHERE chef_id = ?", [userId]);
+    const recipeIds = recipeRows.map((row) => row.id);
+
+    if (recipeIds.length) {
+      const placeholders = recipeIds.map(() => "?").join(",");
+      await connection.query(`DELETE FROM instructions WHERE recipe_id IN (${placeholders})`, recipeIds);
+      await connection.query(`DELETE FROM ingredients WHERE recipe_id IN (${placeholders})`, recipeIds);
+      await connection.query(`DELETE FROM comments WHERE recipe_id IN (${placeholders})`, recipeIds);
+      await connection.query(`DELETE FROM bookmarks WHERE recipe_id IN (${placeholders})`, recipeIds);
+      await connection.query(`DELETE FROM cooked_recipes WHERE recipe_id IN (${placeholders})`, recipeIds);
+      await connection.query(`DELETE FROM recipes WHERE id IN (${placeholders})`, recipeIds);
+    }
+
+    await connection.query("DELETE FROM followers WHERE follower_id = ? OR following_id = ?", [
+      userId,
+      userId,
+    ]);
+    await connection.query("DELETE FROM comment_likes WHERE user_id = ?", [userId]);
+    await connection.query("DELETE FROM comments WHERE user_id = ?", [userId]);
+    await connection.query("DELETE FROM bookmarks WHERE user_id = ?", [userId]);
+    await connection.query("DELETE FROM cooked_recipes WHERE user_id = ?", [userId]);
+    await connection.query("DELETE FROM user_dietary_preferences WHERE user_id = ?", [userId]);
+    await connection.query("DELETE FROM user_preferences WHERE user_id = ?", [userId]);
+    await connection.query("DELETE FROM users WHERE id = ?", [userId]);
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const getAdminRecipes = async (options = {}) => {
+  const page = Math.max(parseInt(options.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(options.limit, 10) || 10, 1), 50);
+  const offset = (page - 1) * limit;
+
+  const where = [];
+  const params = [];
+
+  if (options.search) {
+    where.push("(r.title LIKE ? OR r.category LIKE ? OR u.name LIKE ?)");
+    params.push(`%${options.search}%`, `%${options.search}%`, `%${options.search}%`);
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const [countRows] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM recipes r
+     LEFT JOIN users u ON u.id = r.chef_id
+     ${whereSql}`,
+    params
+  );
+
+  const [rows] = await db.query(
+    `SELECT r.id, r.title, r.category, r.difficulty, r.cook_time, r.servings, r.created_at,
+            u.id AS chef_id, u.name AS chef_name
+     FROM recipes r
+     LEFT JOIN users u ON u.id = r.chef_id
+     ${whereSql}
+     ORDER BY r.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  );
+
+  const total = countRows[0]?.total || 0;
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return {
+    recipes: rows,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+};
+
+const deleteAdminRecipe = async (recipeId) => {
+  const [existingRows] = await db.query("SELECT id FROM recipes WHERE id = ?", [recipeId]);
+  if (!existingRows.length) {
+    const error = new Error("Recipe not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await db.query("DELETE FROM instructions WHERE recipe_id = ?", [recipeId]);
+  await db.query("DELETE FROM ingredients WHERE recipe_id = ?", [recipeId]);
+  await db.query("DELETE FROM comments WHERE recipe_id = ?", [recipeId]);
+  await db.query("DELETE FROM bookmarks WHERE recipe_id = ?", [recipeId]);
+  await db.query("DELETE FROM cooked_recipes WHERE recipe_id = ?", [recipeId]);
+  await db.query("DELETE FROM recipes WHERE id = ?", [recipeId]);
+};
+
+const getAdminComments = async (options = {}) => {
+  const page = Math.max(parseInt(options.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(options.limit, 10) || 10, 1), 50);
+  const offset = (page - 1) * limit;
+
+  const where = [];
+  const params = [];
+
+  if (options.search) {
+    where.push("(c.text LIKE ? OR u.name LIKE ? OR r.title LIKE ?)");
+    params.push(`%${options.search}%`, `%${options.search}%`, `%${options.search}%`);
+  }
+
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const [countRows] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM comments c
+     LEFT JOIN users u ON u.id = c.user_id
+     LEFT JOIN recipes r ON r.id = c.recipe_id
+     ${whereSql}`,
+    params
+  );
+
+  const [rows] = await db.query(
+    `SELECT c.id, c.text, c.rating, c.created_at,
+            u.id AS user_id, u.name AS user_name,
+            r.id AS recipe_id, r.title AS recipe_title
+     FROM comments c
+     LEFT JOIN users u ON u.id = c.user_id
+     LEFT JOIN recipes r ON r.id = c.recipe_id
+     ${whereSql}
+     ORDER BY c.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  );
+
+  const total = countRows[0]?.total || 0;
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return {
+    comments: rows,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+};
+
+const deleteAdminComment = async (commentId) => {
+  const [existingRows] = await db.query("SELECT id FROM comments WHERE id = ?", [commentId]);
+  if (!existingRows.length) {
+    const error = new Error("Comment not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await db.query("DELETE FROM comments WHERE id = ?", [commentId]);
+};
+
 module.exports = {
   getUserProfile,
   getAllUsers,
   updateUserProfile,
   followUser,
   unfollowUser,
+  getBookmarks,
+  getAdminDashboard,
+  getAdminUsers,
+  updateAdminUserRole,
+  deleteAdminUser,
+  getAdminRecipes,
+  deleteAdminRecipe,
+  getAdminComments,
+  deleteAdminComment,
 };

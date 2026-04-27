@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getRecipeById } from "../services/recipesService"; // adjust path if needed
 import {
@@ -32,16 +32,7 @@ import { Textarea } from "../components/ui/textarea";
 import { useAuth } from "../context/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-interface Comment {
-  id: number;
-  author: string;
-  avatar?: string;
-  created_at: string;
-  rating: number;
-  text: string;
-  likes: number;
-  liked_by_me?: number;
-}
+import { Comment } from "../data/CommentModel";
 
 export default function RecipeDetail() {
   const { id } = useParams();
@@ -162,7 +153,7 @@ export default function RecipeDetail() {
         {/* Image */}
         <div className="aspect-square rounded-lg overflow-hidden shadow-lg">
           <img
-            src={recipe.image}
+            src={recipe.image_url}
             alt={recipe.title}
             className="w-full h-full object-cover"
           />
@@ -224,7 +215,13 @@ export default function RecipeDetail() {
               <ChefHat className="h-5 w-5" />
               <div>
                 <p className="text-sm">Chef</p>
-                <p className="font-medium">{recipe.chef_name}</p>
+                {recipe.chef_id ? (
+                  <Link to={`/users/${recipe.chef_id}`} className="font-medium hover:underline">
+                    {recipe.chef_name}
+                  </Link>
+                ) : (
+                  <p className="font-medium">{recipe.chef_name}</p>
+                )}
               </div>
             </div>
           </div>

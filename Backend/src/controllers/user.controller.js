@@ -100,6 +100,119 @@ const unfollowUser = async (req, res) => {
   }
 };
 
+const getBookmarks = async (req, res) => {
+  try {
+    const result = await userService.getBookmarks(req.user.id, req.params.id);
+    res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getAdminDashboard = async (req, res) => {
+  try {
+    const data = await userService.getAdminDashboard();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getAdminUsers = async (req, res) => {
+  try {
+    const data = await userService.getAdminUsers({
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search,
+      role: req.query.role,
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const updateAdminUserRole = async (req, res) => {
+  try {
+    if (!req.body.role) {
+      return res.status(400).json({
+        success: false,
+        message: "role is required",
+      });
+    }
+
+    const user = await userService.updateAdminUserRole(req.params.id, req.body.role, req.user.id);
+    res.status(200).json({
+      success: true,
+      message: "User role updated successfully",
+      data: { user },
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const deleteAdminUser = async (req, res) => {
+  try {
+    await userService.deleteAdminUser(req.params.id, req.user.id);
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getAdminRecipes = async (req, res) => {
+  try {
+    const data = await userService.getAdminRecipes({
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search,
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const deleteAdminRecipe = async (req, res) => {
+  try {
+    await userService.deleteAdminRecipe(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: "Recipe deleted successfully",
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getAdminComments = async (req, res) => {
+  try {
+    const data = await userService.getAdminComments({
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search,
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const deleteAdminComment = async (req, res) => {
+  try {
+    await userService.deleteAdminComment(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: "Comment deleted successfully",
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
 
 
 
@@ -134,4 +247,13 @@ module.exports = {
   followUser,
   unfollowUser,
   createUser,
+  getBookmarks,
+  getAdminDashboard,
+  getAdminUsers,
+  updateAdminUserRole,
+  deleteAdminUser,
+  getAdminRecipes,
+  deleteAdminRecipe,
+  getAdminComments,
+  deleteAdminComment,
 };
