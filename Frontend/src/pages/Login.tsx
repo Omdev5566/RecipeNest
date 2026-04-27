@@ -6,12 +6,10 @@ import {
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import {
-  Tabs, TabsContent, TabsList, TabsTrigger
-} from "../components/ui/tabs";
-import { ChefHat, User } from "lucide-react";
+import { ChefHat } from "lucide-react";
 import { toast } from "sonner";
 import { loginUser } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 type LoginData = {
   email: string;
@@ -20,14 +18,13 @@ type LoginData = {
 
 export default function Login() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("chef");
+  const { setUser } = useAuth();
 
   const [formData, setFormData] = useState<LoginData>({
     email: "",
     password: "",
   });
 
-  // ✅ handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -35,30 +32,20 @@ export default function Login() {
     });
   };
 
-  // ✅ handle login
-  const handleLogin = async (
-    e: React.FormEvent<HTMLFormElement>,
-    role: string
-  ) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
-      const payload = {
-        ...formData,
-        role: role.toLowerCase(),
-      };
+      const res = await loginUser(formData);
+      const user = res.data.data; // ✅ make sure backend returns this
 
-      const res = await loginUser(payload);
-
+      setUser(user); // update global state
       toast.success("Login successful");
 
-      // store token
-      if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-      }
-
-      // redirect
-      if (role === "Chef" || role === "Administrator") {
+      // ✅ redirect based on backend role
+      if (user.role === "chef") {
+        navigate("/dashboard");
+      } else if (user.role === "admin") {
         navigate("/admin");
       } else {
         navigate("/");
@@ -86,76 +73,32 @@ export default function Login() {
           </CardHeader>
 
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <form onSubmit={handleLogin} className="space-y-4">
 
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="chef">
-                  <ChefHat className="h-4 w-4 mr-2" />
-                  Chef
-                </TabsTrigger>
-                <TabsTrigger value="foodlover">
-                  <User className="h-4 w-4 mr-2" />
-                  Food Lover
-                </TabsTrigger>
-              </TabsList>
+              <div>
+                <Label>Email</Label>
+                <Input
+                  name="email"
+                  type="email"
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-              {/* CHEF */}
-              <TabsContent value="chef">
-                <form onSubmit={(e) => handleLogin(e, "Chef")} className="space-y-4">
+              <div>
+                <Label>Password</Label>
+                <Input
+                  name="password"
+                  type="password"
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      name="email"
-                      type="email"
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Password</Label>
-                    <Input
-                      name="password"
-                      type="password"
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <Button className="w-full">Sign in as Chef</Button>
-                </form>
-              </TabsContent>
-
-              {/* FOOD LOVER */}
-              <TabsContent value="foodlover">
-                <form onSubmit={(e) => handleLogin(e, "Food Lover")} className="space-y-4">
-
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      name="email"
-                      type="email"
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Password</Label>
-                    <Input
-                      name="password"
-                      type="password"
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <Button className="w-full">Sign in as Food Lover</Button>
-                </form>
-              </TabsContent>
-
-            </Tabs>
+              <Button className="w-full">
+                Sign in
+              </Button>
+            </form>
 
             <div className="mt-6 text-center">
               <Button variant="link" onClick={() => navigate("/")}>

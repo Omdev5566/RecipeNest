@@ -1,46 +1,17 @@
  const userService = require("../services/user.service");
 const { NODE_ENV } = require("../config/config");
 
-// Simple validation helper - easy for beginners to understand
-const validateRegister = (data) => {
-  const errors = [];
-  
-  if (!data.name || data.name.trim() === "") {
-    errors.push("Name is required");
-  }
-  
-  if (!data.email || data.email.trim() === "") {
-    errors.push("Email is required");
-  } else if (!data.email.includes("@")) {
-    errors.push("Please provide a valid email address");
-  }
-  
-  if (!data.password || data.password === "") {
-    errors.push("Password is required");
-  } else if (data.password.length < 6) {
-    errors.push("Password must be at least 6 characters");
-  }
-  
-  return errors;
-};
-
-const validateLogin = (data) => {
-  const errors = [];
-  
-  if (!data.email || data.email.trim() === "") {
-    errors.push("Email is required");
-  }
-  
-  if (!data.password || data.password === "") {
-    errors.push("Password is required");
-  }
-  
-  return errors;
+const handleError = (res, error) => {
+  const statusCode = error.statusCode || 500;
+  res.status(statusCode).json({
+    success: false,
+    message: error.message || "Internal server error",
+  });
 };
 
 const validateUpdateProfile = (data) => {
   const errors = [];
-  const allowedFields = ["name", "phone", "address", "avatar"];
+  const allowedFields = ["name", "phone", "location", "bio", "profile_image"];
   
   const updateKeys = Object.keys(data);
   const invalidFields = updateKeys.filter(key => !allowedFields.includes(key));
@@ -52,104 +23,9 @@ const validateUpdateProfile = (data) => {
   return errors;
 };
 
-const validateChangePassword = (data) => {
-  const errors = [];
-  
-  if (!data.currentPassword || data.currentPassword === "") {
-    errors.push("Current password is required");
-  }
-  
-  if (!data.newPassword || data.newPassword === "") {
-    errors.push("New password is required");
-  } else if (data.newPassword.length < 6) {
-    errors.push("New password must be at least 6 characters");
-  }
-  
-  return errors;
-};
-
-const handleError = (res, error) => {
-  console.error("Controller Error:", error.message);
-  const statusCode = error.statusCode || 500;
-  res.status(statusCode).json({
-    success: false,
-    message: error.message || "Internal server error",
-    ...(NODE_ENV === "development" && { stack: error.stack }),
-  });
-};
-
-const register = async (req, res) => {
-  try {
-    // Simple validation
-    const errors = validateRegister(req.body);
-    if (errors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: errors,
-      });
-    }
-
-    const { name, email, password, role } = req.body;
-    const result = await userService.registerUser({ name, email, password, role });
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      secure: false, // true in production (HTTPS)
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Registration successful",
-      data: result.user,
-    });
-    } catch (error) {
-    handleError(res, error);
-  }
-};
-
-const login = async (req, res) => {
-  try {
-    // validation
-    const errors = validateLogin(req.body);
-    if (errors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors,
-      });
-    }
-
-    const { email, password } = req.body;
-
-    const result = await userService.loginUser(email, password);
-
-    // set cookie HERE (not in service)
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      secure: false, // true in production (HTTPS)
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: result.user,
-    });
-  } catch (error) {
-    handleError(res, error);
-  }
-};
-
-const getMe = (req, res) => {
-  res.json(req.user);
-};
-
 const getProfile = async (req, res) => {
   try {
-    const result = await userService.getUserProfile(req.user.id);
+    const result = await userService.getUserProfile(req.user.id, req.user.id);
     res.status(200).json({ success: true, data: result.data });
   } catch (error) {
     handleError(res, error);
@@ -180,7 +56,6 @@ const getAllUsers = async (req, res) => {
     const options = {
       page: req.query.page,
       limit: req.query.limit,
-      includeInactive: req.query.includeInactive === "true",
     };
     const result = await userService.getAllUsers(options);
     res.status(200).json({ success: true, data: result.data });
@@ -191,41 +66,155 @@ const getAllUsers = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
-    const result = await userService.getUserProfile(req.params.id);
+    const result = await userService.getUserProfile(req.params.id, req.user.id);
     res.status(200).json({ success: true, data: result.data });
   } catch (error) {
     handleError(res, error);
   }
 };
 
-const changePassword = async (req, res) => {
+const getPublicUserProfile = async (req, res) => {
   try {
-    // Simple validation
-    const errors = validateChangePassword(req.body);
-    if (errors.length > 0) {
+    const result = await userService.getUserProfile(req.params.id, req.user.id);
+    res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const followUser = async (req, res) => {
+  try {
+    const result = await userService.followUser(req.user.id, req.params.id);
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const unfollowUser = async (req, res) => {
+  try {
+    const result = await userService.unfollowUser(req.user.id, req.params.id);
+    res.status(200).json({ success: true, message: result.message });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getBookmarks = async (req, res) => {
+  try {
+    const result = await userService.getBookmarks(req.user.id, req.params.id);
+    res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getAdminDashboard = async (req, res) => {
+  try {
+    const data = await userService.getAdminDashboard();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getAdminUsers = async (req, res) => {
+  try {
+    const data = await userService.getAdminUsers({
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search,
+      role: req.query.role,
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const updateAdminUserRole = async (req, res) => {
+  try {
+    if (!req.body.role) {
       return res.status(400).json({
         success: false,
-        message: "Validation failed",
-        errors: errors,
+        message: "role is required",
       });
     }
 
-    const { currentPassword, newPassword } = req.body;
-    const result = await userService.changePassword(req.user.id, currentPassword, newPassword);
-    res.status(200).json({ success: true, message: result.message });
+    const user = await userService.updateAdminUserRole(req.params.id, req.body.role, req.user.id);
+    res.status(200).json({
+      success: true,
+      message: "User role updated successfully",
+      data: { user },
+    });
   } catch (error) {
     handleError(res, error);
   }
 };
 
-const deactivateUser = async (req, res) => {
+const deleteAdminUser = async (req, res) => {
   try {
-    const result = await userService.deactivateUser(req.params.id);
-    res.status(200).json({ success: true, message: result.message });
+    await userService.deleteAdminUser(req.params.id, req.user.id);
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
   } catch (error) {
     handleError(res, error);
   }
 };
+
+const getAdminRecipes = async (req, res) => {
+  try {
+    const data = await userService.getAdminRecipes({
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search,
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const deleteAdminRecipe = async (req, res) => {
+  try {
+    await userService.deleteAdminRecipe(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: "Recipe deleted successfully",
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const getAdminComments = async (req, res) => {
+  try {
+    const data = await userService.getAdminComments({
+      page: req.query.page,
+      limit: req.query.limit,
+      search: req.query.search,
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const deleteAdminComment = async (req, res) => {
+  try {
+    await userService.deleteAdminComment(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: "Comment deleted successfully",
+    });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+
 
 const createUser = async (req, res) => {
   try {
@@ -247,20 +236,24 @@ const createUser = async (req, res) => {
   }
 };
 
-const logout = async (req, res) => {
-  res.status(200).json({ success: true, message: "Logged out successfully" });
-};
+
 
 module.exports = {
-  register,
-  login,
-  getMe,
   getProfile,
   updateProfile,
   getAllUsers,
   getUserById,
-  changePassword,
-  deactivateUser,
+  getPublicUserProfile,
+  followUser,
+  unfollowUser,
   createUser,
-  logout,
+  getBookmarks,
+  getAdminDashboard,
+  getAdminUsers,
+  updateAdminUserRole,
+  deleteAdminUser,
+  getAdminRecipes,
+  deleteAdminRecipe,
+  getAdminComments,
+  deleteAdminComment,
 };

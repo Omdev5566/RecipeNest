@@ -1,13 +1,11 @@
-import { useState } from 'react';
-import { AdminSidebar } from '../../components/AdminSidebar';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { categories } from '../../data/mockData';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,9 +27,45 @@ import {
   AlertDialogTrigger,
 } from '../../components/ui/alert-dialog';
 import { toast } from 'sonner';
+import { getAllRecipesForAnalytics } from '../../services/chefServices';
 
 export default function ManageCategories() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [recipes, setRecipes] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadRecipes = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllRecipesForAnalytics();
+        setRecipes(data);
+      } catch (error) {
+        toast.error('Failed to load categories');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRecipes();
+  }, []);
+
+  const categories = useMemo(() => {
+    const map = new Map();
+
+    recipes.forEach((recipe) => {
+      const name = recipe.category;
+      if (!name) return;
+      map.set(name, (map.get(name) || 0) + 1);
+    });
+
+    return Array.from(map.entries()).map(([name, recipeCount], index) => ({
+      id: String(index + 1),
+      name,
+      description: `${name} recipes`,
+      recipeCount,
+    }));
+  }, [recipes]);
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,10 +74,7 @@ export default function ManageCategories() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <AdminSidebar />
-      
-      <main className="flex-1 p-8">
+    <div className="p-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl mb-2">Manage Categories</h1>
@@ -90,6 +121,13 @@ export default function ManageCategories() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {loading ? (
+          <div className="py-12 flex justify-center text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            Loading categories...
+          </div>
+        ) : null}
 
         {/* Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,7 +219,10 @@ export default function ManageCategories() {
             </Card>
           ))}
         </div>
-      </main>
+
+        {!loading && categories.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">No categories found</div>
+        ) : null}
     </div>
   );
 }

@@ -1,5 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Bookmark, Home, LogIn, User } from "lucide-react";
+import {
+  Search,
+  Bookmark,
+  Home,
+  LogIn,
+  User,
+  LayoutDashboardIcon,
+} from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { useAuth } from "../context/AuthContext";
@@ -10,10 +17,12 @@ interface UserNavbarProps {
 }
 
 export function UserNavbar({ searchTerm, onSearchChange }: UserNavbarProps) {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  const location = useLocation();
+  const location = useLocation(); // ✅ always call hooks first
+  const { user, loading } = useAuth(); // ✅ always called in same order
 
+  if (loading) {
+    return null; // ✅ safe AFTER hooks
+  }
   return (
     <nav className="border-b bg-background sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -36,6 +45,18 @@ export function UserNavbar({ searchTerm, onSearchChange }: UserNavbarProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {user?.role == "chef" ? (
+              <Button
+                variant={location.pathname === "/chef" ? "default" : "ghost"}
+                size="sm"
+                asChild
+              >
+                <Link to="/dashboard">
+                  <LayoutDashboardIcon className="h-4 w-4 mr-2" />
+                  Dashboard
+                </Link>
+              </Button>
+            ) : null}
             <Button
               variant={location.pathname === "/" ? "default" : "ghost"}
               size="sm"
@@ -46,6 +67,7 @@ export function UserNavbar({ searchTerm, onSearchChange }: UserNavbarProps) {
                 Discover
               </Link>
             </Button>
+
             <Button
               variant={location.pathname === "/bookmarks" ? "default" : "ghost"}
               size="sm"
@@ -62,19 +84,26 @@ export function UserNavbar({ searchTerm, onSearchChange }: UserNavbarProps) {
                 size="sm"
                 asChild
               >
-                <Link to="/profile">
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
+                <Link to="/profile" className="flex items-center">
+                  {user.profile_image ? (
+                    <img
+                      src={user.profile_image}
+                      alt="Profile"
+                      className="h-8 w-8 rounded-full mr-2 object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4 mr-2" />
+                  )}
                 </Link>
               </Button>
-            ) : (
+            ) : !user ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/login">
                   <LogIn className="h-4 w-4 mr-2" />
                   Sign In
                 </Link>
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

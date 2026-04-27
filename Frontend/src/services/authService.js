@@ -1,14 +1,14 @@
 import API from "./api";
 
 // login
-export const loginUser = (data) => API.post("/users/login", data);
+export const loginUser = (data) => API.post("/auth/login", data);
 
 // register
-export const registerUser = (data) => API.post("/users/register", data);
+export const registerUser = (data) => API.post("/auth/register", data);
 
 // get current user
-export const getMe = () => API.get("/users/me");
+export const getMe = () => API.get("/auth/me");
 
 export const logoutUser = () => {
-  return API.post("/users/logout");
+  return API.post("/auth/logout");
 };
