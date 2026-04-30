@@ -31,7 +31,6 @@ const UPLOAD_DIRS = {
 Object.values(UPLOAD_DIRS).forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
-    console.log(`📁 Created directory: ${dir}`);
   }
 });
 
@@ -144,7 +143,6 @@ const deleteOldFile = (filename, type) => {
   if (fs.existsSync(filePath)) {
     try {
       fs.unlinkSync(filePath);
-      console.log(`🗑️ Deleted file: ${filePath}`);
     } catch (err) {
       console.error(`Error deleting file: ${err.message}`);
     }
@@ -161,7 +159,7 @@ const getFileUrl = (filename, type) => {
 
   const folder = type === "avatar" ? "avatars" : "recipes";
 
-  return `/uploads/${folder}/${filename}`;
+  return `http://localhost:3000/uploads/${folder}/${filename}`;
 };
 
 /**

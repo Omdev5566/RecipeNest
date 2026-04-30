@@ -1,6 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require("cors");
+const path = require('path');
 
 const app = express();
 app.use(cookieParser());
@@ -14,6 +15,9 @@ app.use(cors({
 // Middleware to parse JSON bodies
 app.use(express.json());
 
+// ✅ Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Basic health check route
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Welcome to the MS Backend API (Phase 1)' });
@@ -26,11 +30,14 @@ app.use(express.urlencoded({ extended: true }));
 const userRoutes = require('./routes/user.routes');
 const recipeRoutes = require('./routes/recipe.routes');
 const commentRoutes = require('./routes/comment.routes');
-const authRoutes = require('./routes/auth.routes')
+const authRoutes = require('./routes/auth.routes');
+const uploadRoutes = require('./routes/upload.routes');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // 404 handler for unknown routes
 app.use((req, res, next) => {

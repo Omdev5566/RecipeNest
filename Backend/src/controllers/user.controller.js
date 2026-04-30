@@ -102,8 +102,25 @@ const unfollowUser = async (req, res) => {
 
 const getBookmarks = async (req, res) => {
   try {
-    const result = await userService.getBookmarks(req.user.id, req.params.id);
+    const targetUserId = req.params.id || req.user.id;
+    const result = await userService.getBookmarks(targetUserId, req.user.id);
     res.status(200).json({ success: true, data: result.data });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
+const toggleBookmark = async (req, res) => {
+  try {
+    const result = await userService.toggleBookmark(req.user.id, req.params.recipeId);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: {
+        bookmarked: result.bookmarked,
+        bookmarkId: result.bookmarkId,
+      },
+    });
   } catch (error) {
     handleError(res, error);
   }
@@ -248,6 +265,7 @@ module.exports = {
   unfollowUser,
   createUser,
   getBookmarks,
+  toggleBookmark,
   getAdminDashboard,
   getAdminUsers,
   updateAdminUserRole,

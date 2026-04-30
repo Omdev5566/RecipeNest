@@ -110,7 +110,6 @@ const login = async (req, res) => {
     }
 
     const { email, password } = req.body;
-    console.log("email and pass", email, password);
 
     const result = await authService.loginUser(email, password);
 

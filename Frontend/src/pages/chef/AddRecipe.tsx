@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -6,9 +6,9 @@ import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { ArrowLeft, Plus, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
-import { createChefRecipe, getAllRecipesForAnalytics } from '../../services/chefServices';
+import { createChefRecipe, getAllRecipesForAnalytics, uploadChefRecipeImage } from '../../services/chefServices';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AddRecipe() {
@@ -25,8 +25,12 @@ export default function AddRecipe() {
   const [cookTime, setCookTime] = useState('');
   const [servings, setServings] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [ingredients, setIngredients] = useState<string[]>(['']);
   const [instructions, setInstructions] = useState<string[]>(['']);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -53,6 +57,14 @@ export default function AddRecipe() {
     () => instructions.map((item) => item.trim()).filter(Boolean),
     [instructions],
   );
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   const handleAddIngredient = () => {
     setIngredients([...ingredients, '']);
@@ -82,6 +94,58 @@ export default function AddRecipe() {
     setInstructions(next);
   };
 
+  const validateImage = (file: File) => {
+    const maxSize = 5 * 1024 * 1024;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload a valid image file');
+      return false;
+    }
+    if (file.size > maxSize) {
+      toast.error('Image must be 5MB or smaller');
+      return false;
+    }
+    return true;
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!validateImage(file)) return;
+
+    if (imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setImagePreview(URL.createObjectURL(file));
+
+    try {
+      setUploadingImage(true);
+      const uploadedUrl = await uploadChefRecipeImage(file);
+      setImageUrl(uploadedUrl || '');
+      toast.success('Recipe image uploaded');
+    } catch (error: any) {
+      setImageUrl('');
+      const message = error?.response?.data?.message || 'Image upload failed';
+      toast.error(message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const onFileInputChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await handleImageUpload(file);
+    event.target.value = '';
+  };
+
+  const onDropImage = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingImage(false);
+
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    await handleImageUpload(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -97,6 +161,11 @@ export default function AddRecipe() {
 
     if (validIngredients.length === 0 || validInstructions.length === 0) {
       toast.error('Please add at least one ingredient and one instruction');
+      return;
+    }
+
+    if (!imageUrl) {
+      toast.error('Please upload a recipe image');
       return;
     }
 
@@ -218,15 +287,56 @@ export default function AddRecipe() {
               </div>
 
               <div>
-                <Label htmlFor="image">Image URL</Label>
-                <Input
-                  id="image"
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://..."
-                  required
-                />
+                <Label>Recipe Image</Label>
+                <div
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setIsDraggingImage(true);
+                  }}
+                  onDragLeave={() => setIsDraggingImage(false)}
+                  onDrop={onDropImage}
+                  className={`mt-2 rounded-md border-2 border-dashed p-6 text-center transition-colors ${
+                    isDraggingImage ? 'border-primary bg-muted/50' : 'border-border'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={onFileInputChange}
+                    className="hidden"
+                  />
+
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="Recipe preview"
+                      className="mx-auto mb-4 h-48 w-full max-w-sm rounded-md object-cover"
+                    />
+                  ) : null}
+
+                  <Upload className="mx-auto mb-2 h-6 w-6" />
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    Drag and drop an image here, or browse files
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                  >
+                    Browse Files
+                  </Button>
+
+                  {uploadingImage ? (
+                    <div className="mt-3 flex items-center justify-center text-sm text-muted-foreground">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading image...
+                    </div>
+                  ) : imageUrl ? (
+                    <p className="mt-3 text-sm text-green-600">Image uploaded successfully</p>
+                  ) : null}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -301,11 +411,11 @@ export default function AddRecipe() {
           </Card>
 
           <div className="flex gap-4">
-            <Button type="submit" size="lg" disabled={loading}>
-              {loading ? (
+            <Button type="submit" size="lg" disabled={loading || uploadingImage}>
+              {loading || uploadingImage ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Adding...
+                  {uploadingImage ? 'Uploading image...' : 'Adding...'}
                 </>
               ) : (
                 'Add Recipe'

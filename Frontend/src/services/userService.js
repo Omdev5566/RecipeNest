@@ -19,4 +19,20 @@ export const unfollowUser = (id) => API.delete(`/users/${id}/follow`);
 
 export const createUser = (data) => API.post("/users/create", data);
 
-export const getBookmarks = (id) => API.get(`users/bookmarks/${id}`);
+export const getBookmarks = (id) =>
+  API.get(id ? `/users/bookmarks/${id}` : "/users/bookmarks");
+
+export const toggleBookmark = (recipeId) => API.post(`/users/bookmarks/${recipeId}`);
+
+export const uploadAvatar = async (file) => {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const res = await API.post("/uploads/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return res.data;
+};

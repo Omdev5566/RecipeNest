@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -37,10 +37,15 @@ import {
   ChefHat,
   Users,
   LogOut,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { RecipeCard } from "../../components/RecipeCard";
-import { getProfile, updateProfile } from "../../services/userService";
+import {
+  getProfile,
+  updateProfile,
+  uploadAvatar,
+} from "../../services/userService";
 import { ProfileListDialog } from "./ui/profileListDialog";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -72,6 +77,9 @@ export default function FoodLoverProfile() {
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
   const [bio, setBio] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadProfile = async () => {
     try {
@@ -83,6 +91,7 @@ export default function FoodLoverProfile() {
       setPhone(profile?.phone || "");
       setLocation(profile?.location || "");
       setBio(profile?.bio || "");
+      setAvatarPreview(profile?.profile_image || "");
     } catch (error) {
       toast.error("Failed to load your profile");
     } finally {
@@ -129,6 +138,60 @@ export default function FoodLoverProfile() {
     await logout();
     toast.success("Logged out successfully");
     navigate("/login");
+  };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview && avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+    };
+  }, [avatarPreview]);
+
+  const validateImage = (file: File) => {
+    const maxSize = 5 * 1024 * 1024;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file");
+      return false;
+    }
+    if (file.size > maxSize) {
+      toast.error("Image must be 5MB or smaller");
+      return false;
+    }
+    return true;
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!validateImage(file)) return;
+
+    try {
+      setUploadingAvatar(true);
+      if (avatarPreview && avatarPreview.startsWith("blob:"))
+        URL.revokeObjectURL(avatarPreview);
+      setAvatarPreview(URL.createObjectURL(file));
+
+      await uploadAvatar(file);
+      await loadProfile();
+      toast.success("Avatar updated");
+    } catch (err) {
+      toast.error("Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const onFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await handleAvatarUpload(file);
+    e.currentTarget.value = "";
+  };
+
+  const onDropAvatar = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await handleAvatarUpload(file);
   };
 
   if (loading) {
@@ -190,13 +253,31 @@ export default function FoodLoverProfile() {
               <CardTitle>Profile Overview</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex flex-col items-center">
-                <Avatar className="h-32 w-32 mb-4">
-                  <AvatarImage src={user.profile_image || ""} alt={user.name} />
-                  <AvatarFallback className="text-3xl">
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                </Avatar>
+              <div
+                className="flex flex-col items-center"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={onDropAvatar}
+              >
+                <div className="relative">
+                  <Avatar className="h-32 w-32 mb-4">
+                    <AvatarImage
+                      src={user.profile_image || avatarPreview || ""}
+                      alt={user.name}
+                    />
+                    <AvatarFallback className="text-3xl">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={onFileInputChange}
+                    className="hidden"
+                  />
+                </div>
+
                 <h3 className="text-xl font-semibold mb-1">{user.name}</h3>
                 {user.role == "user" ? (
                   <Badge variant="secondary" className="mb-4">
@@ -210,8 +291,23 @@ export default function FoodLoverProfile() {
                   </Badge>
                 )}
 
-                <Button variant="outline" size="sm" disabled>
-                  Change Photo
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                >
+                  {uploadingAvatar ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Change Photo
+                    </>
+                  )}
                 </Button>
               </div>
 

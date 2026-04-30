@@ -5,12 +5,18 @@ import {
   FolderOpen,
   ArrowLeft,
   User,
-  Disc2Icon,
+  LogOut,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export function ChefSidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
   const location = useLocation();
 
   const links = [
@@ -19,6 +25,11 @@ export function ChefSidebar() {
     { to: "/manage-recipes", label: "Manage Recipes", icon: ChefHat },
     { to: "/manage-categories", label: "Manage Categories", icon: FolderOpen },
   ];
+  const handleLogout = async () => {
+    await logout();
+    toast.success("Logged out successfully");
+    navigate("/login");
+  };
 
   return (
     <aside className="w-64 border-r bg-muted/40 min-h-screen p-4">
@@ -51,7 +62,10 @@ export function ChefSidebar() {
           );
         })}
       </nav>
-
+      <Button variant="outline" onClick={handleLogout}>
+        <LogOut className="h-4 w-4 mr-2" />
+        Logout
+      </Button>
       <Button variant="outline" size="sm" asChild className="w-full">
         <Link to="/">
           <ArrowLeft className="h-4 w-4 mr-2" />

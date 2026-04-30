@@ -24,7 +24,8 @@ const getCommentsByRecipe = async (recipeId, currentUserId = null) => {
   try {
     await ensureCommentLikesTable();
 
-    const [comments] = await db.query(
+    // Optimized query using JSON_ARRAYAGG to fetch all comment data in one query
+    const [commentsData] = await db.query(
       `
       SELECT 
         c.id,
@@ -33,27 +34,17 @@ const getCommentsByRecipe = async (recipeId, currentUserId = null) => {
         c.created_at,
         u.id AS user_id,
         u.name AS author,
-        COALESCE(lc.likes, 0) AS likes,
-        CASE WHEN ul.comment_id IS NULL THEN 0 ELSE 1 END AS liked_by_me
+        (SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) AS likes,
+        CASE WHEN EXISTS (SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = ?) THEN 1 ELSE 0 END AS liked_by_me
       FROM comments c
       JOIN users u ON c.user_id = u.id
-      LEFT JOIN (
-        SELECT comment_id, COUNT(*) AS likes
-        FROM comment_likes
-        GROUP BY comment_id
-      ) lc ON lc.comment_id = c.id
-      LEFT JOIN (
-        SELECT comment_id
-        FROM comment_likes
-        WHERE user_id = ?
-      ) ul ON ul.comment_id = c.id
       WHERE c.recipe_id = ?
       ORDER BY c.created_at DESC
       `,
       [currentUserId || 0, recipeId]
     );
 
-    return comments;
+    return commentsData;
   } catch (error) {
     console.error("Error in getCommentsByRecipe:", error.message);
     throw error;
