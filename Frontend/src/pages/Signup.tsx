@@ -125,7 +125,7 @@ export default function Register() {
 
               {/* FOOD LOVER */}
               <TabsContent value="foodlover">
-                <form onSubmit={(e) => handleRegister(e, "admin")} className="space-y-4">
+                <form onSubmit={(e) => handleRegister(e, "user")} className="space-y-4">
 
                   <div>
                     <Label>Full Name</Label>

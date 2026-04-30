@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Textarea } from "../components/ui/textarea";
 import { useAuth } from "../context/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getBookmarks, toggleBookmark } from "../services/userService";
 
 import { Comment } from "../data/CommentModel";
 
@@ -104,6 +105,25 @@ export default function RecipeDetail() {
     if (id) fetchRecipe();
   }, [id]);
 
+  useEffect(() => {
+    const loadBookmarkState = async () => {
+      if (!id || !user?.id) {
+        setIsBookmarked(false);
+        return;
+      }
+
+      try {
+        const res = await getBookmarks();
+        const bookmarks = res.data?.data || [];
+        setIsBookmarked(bookmarks.some((item: any) => String(item.id) === String(id)));
+      } catch {
+        setIsBookmarked(false);
+      }
+    };
+
+    loadBookmarkState();
+  }, [id, user?.id]);
+
   if (loading) {
     return <div className="p-10 text-center">Loading recipe...</div>;
   }
@@ -142,6 +162,26 @@ export default function RecipeDetail() {
     likeMutation.mutate(commentId);
   };
 
+  const handleToggleBookmark = async () => {
+    if (!user) {
+      toast.error("Please login to save bookmarks");
+      navigate("/login");
+      return;
+    }
+
+    if (!id) return;
+
+    try {
+      const res = await toggleBookmark(id);
+      const bookmarked = Boolean(res.data?.data?.bookmarked);
+      setIsBookmarked(bookmarked);
+      toast.success(res.data?.message || (bookmarked ? "Added to bookmarks" : "Removed from bookmarks"));
+    } catch (err: any) {
+      const message = err?.response?.data?.message || "Failed to update bookmark";
+      toast.error(message);
+    }
+  };
+
   return (
     <>
       <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
@@ -172,14 +212,7 @@ export default function RecipeDetail() {
             <Button
               variant={isBookmarked ? "default" : "outline"}
               size="icon"
-              onClick={() => {
-                setIsBookmarked(!isBookmarked);
-                toast.success(
-                  isBookmarked
-                    ? "Removed from bookmarks"
-                    : "Added to bookmarks",
-                );
-              }}
+              onClick={handleToggleBookmark}
             >
               {isBookmarked ? (
                 <BookmarkCheck className="h-5 w-5" />

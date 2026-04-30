@@ -3,7 +3,8 @@ import { BookmarkX, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
 import { RecipeCard } from '../components/RecipeCard';
-import { getBookmarks, getProfile } from '../services/userService';
+import { getBookmarks } from '../services/userService';
+import { useAuth } from '../context/AuthContext';
 
 type BookmarkedRecipe = {
   id: number;
@@ -19,16 +20,18 @@ type BookmarkedRecipe = {
 };
 
 export default function Bookmarks() {
+  const { loading: authLoading } = useAuth();
   const [bookmarkedRecipes, setBookmarkedRecipes] = useState<BookmarkedRecipe[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadBookmarks = async () => {
+      if (authLoading) return;
+
       try {
         setLoading(true);
         const res = await getBookmarks();
-        const bookmarks = res.data;
-        setBookmarkedRecipes(bookmarks.data || []);
+        setBookmarkedRecipes(res.data?.data || []);
       } catch (error) {
         setBookmarkedRecipes([]);
       } finally {
@@ -37,7 +40,7 @@ export default function Bookmarks() {
     };
 
     loadBookmarks();
-  }, []);
+  }, [authLoading]);
 
   if (loading) {
     return (

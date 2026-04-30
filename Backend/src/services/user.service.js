@@ -420,7 +420,48 @@ const getBookmarks = async (userId, viewerId = userId) => {
       data: bookmarkedRecipeRows
     }
   } catch (err) {
-    console.error("Error getting bookmmarks:", error.message);
+    console.error("Error getting bookmarks:", err.message);
+    throw err;
+  }
+};
+
+const toggleBookmark = async (userId, recipeId) => {
+  try {
+    const [recipeRows] = await db.query("SELECT id FROM recipes WHERE id = ?", [recipeId]);
+    if (!recipeRows.length) {
+      const error = new Error("Recipe not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const [existingRows] = await db.query(
+      "SELECT id FROM bookmarks WHERE user_id = ? AND recipe_id = ? LIMIT 1",
+      [userId, recipeId],
+    );
+
+    if (existingRows.length > 0) {
+      await db.query("DELETE FROM bookmarks WHERE id = ?", [existingRows[0].id]);
+
+      return {
+        success: true,
+        bookmarked: false,
+        message: "Removed from bookmarks",
+      };
+    }
+
+    const [insertResult] = await db.query(
+      "INSERT INTO bookmarks (user_id, recipe_id) VALUES (?, ?)",
+      [userId, recipeId],
+    );
+
+    return {
+      success: true,
+      bookmarked: true,
+      bookmarkId: insertResult.insertId,
+      message: "Added to bookmarks",
+    };
+  } catch (error) {
+    console.error("Error toggling bookmark:", error.message);
     throw error;
   }
 };
@@ -751,4 +792,5 @@ module.exports = {
   deleteAdminRecipe,
   getAdminComments,
   deleteAdminComment,
+  toggleBookmark,
 };

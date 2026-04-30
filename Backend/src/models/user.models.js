@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET, JWT_EXPIRES_IN } = require("../config/config");
-console.log("JWT_SECRET from config:", JWT_SECRET); // Debugging line to check if JWT_SECRET is loaded correctly
 
 const UserSchema = new mongoose.Schema(
   {

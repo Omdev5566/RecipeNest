@@ -44,7 +44,7 @@ export default function Login() {
 
       // ✅ redirect based on backend role
       if (user.role === "chef") {
-        navigate("/dashboard");
+        navigate("/chef");
       } else if (user.role === "admin") {
         navigate("/admin");
       } else {

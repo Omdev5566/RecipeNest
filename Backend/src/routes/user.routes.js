@@ -17,9 +17,6 @@ const userController = require("../controllers/user.controller");
 // Import middleware
 const { protect, adminOnly } = require("../middleware/auth.middleware");
 
-// Import multer configuration for avatar uploads
-const { uploadAvatar } = require("../config/multer.config");
-
 // ============================================
 // PUBLIC ROUTES (No authentication required)
 // ============================================
@@ -60,6 +57,19 @@ router.post("/:id/follow", protect, userController.followUser);
 router.delete("/:id/follow", protect, userController.unfollowUser);
 
 /**
+ * GET /api/users/bookmarks/:id?
+ * Get bookmarked recipes for the current user or a specific user
+ */
+router.get("/bookmarks", protect, userController.getBookmarks);
+router.get("/bookmarks/:id", protect, userController.getBookmarks);
+
+/**
+ * POST /api/users/bookmarks/:recipeId
+ * Toggle bookmark state for a recipe
+ */
+router.post("/bookmarks/:recipeId", protect, userController.toggleBookmark);
+
+/**
  * PUT /api/users/profile
  * Update current user's profile (text fields only)
  * Body: { name, phone, address }
@@ -67,7 +77,7 @@ router.delete("/:id/follow", protect, userController.unfollowUser);
 router.put("/profile", protect, userController.updateProfile);
 
 /**
- * PATCH /api/users/avatar
+ * PATCH /api/uploads/avatar
  * Update user's avatar/profile picture
  * Content-Type: multipart/form-data
  * Field name: 'avatar'
@@ -76,6 +86,8 @@ router.put("/profile", protect, userController.updateProfile);
  * - uploadAvatar.single('avatar') processes a single file from the 'avatar' field
  * - File is validated (type, size) and saved to uploads/avatars directory
  * - File info is available in req.file after upload
+ * 
+ * ⚠️ Note: Use POST /api/uploads/avatar instead (see upload.routes.js)
  */
 // router.patch(
 //   "/avatar",
@@ -85,8 +97,10 @@ router.put("/profile", protect, userController.updateProfile);
 // );
 
 /**
- * DELETE /api/users/avatar
+ * DELETE /api/uploads/avatar
  * Remove user's avatar (reset to default)
+ * 
+ * ⚠️ Note: Use DELETE /api/uploads/avatar instead (see upload.routes.js)
  */
 // router.delete("/avatar", protect, userController.deleteAvatar);
 
@@ -118,8 +132,6 @@ router.get("/", protect, adminOnly, userController.getAllUsers);
  * Get specific user by ID
  */
 router.get("/:id", protect, adminOnly, userController.getUserById);
-
-router.get("/bookmarks/:id", protect, userController.getBookmarks)
 
 
 // Export router for use in app.js
